@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-gate.local/contract/evidence.schema.json",
+  "title": "Evidence Gate evidence record",
+  "description": "One JSON line of out/evidence.jsonl: the proof for one scenario run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "task", "criterion", "scenario", "source", "confirmed", "commit", "adapter", "action", "input", "expected", "actual", "status", "error", "ts"],
+  "properties": {
+    "run_id": { "type": "string", "description": "ID of the Gate run, for example r-20261105-101403." },
+    "task": { "type": "string", "description": "Task ID, for example SHOP-102." },
+    "criterion": { "type": ["string", "null"], "description": "Criterion ID, or null for an AI scenario not tied to a criterion." },
+    "scenario": { "type": "string", "description": "Scenario ID, for example S-AC-3-1." },
+    "source": { "enum": ["spec-example", "approved", "ai-proposed"], "description": "Where the scenario came from." },
+    "confirmed": { "type": "boolean", "description": "True when the expected value comes from the spec or a human. AI-proposed scenarios are never confirmed." },
+    "commit": { "type": "string", "description": "Git commit the app was running." },
+    "adapter": { "type": "string", "description": "Adapter name, for example api." },
+    "action": { "type": "string", "description": "Action name inside the adapter, for example quote_order." },
+    "input": { "type": "object", "description": "Input values given to the action." },
+    "expected": { "type": "object", "description": "Expected result fields." },
+    "actual": { "type": ["object", "null"], "description": "What the driver saw, or null if it could not run." },
+    "status": { "enum": ["pass", "fail", "error"], "description": "pass or fail from the compare rule; error when the scenario could not run." },
+    "error": { "type": ["string", "null"], "description": "Error text, or null when it ran fine." },
+    "mismatches": {
+      "type": "array",
+      "description": "Fields where expected and actual differ.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "expected", "actual"],
+        "properties": {
+          "field": { "type": "string", "description": "Field name." },
+          "expected": { "description": "Expected value." },
+          "actual": { "description": "Value actually seen." }
+        }
+      }
+    },
+    "artifacts": { "type": "object", "description": "Extra files, for example a screenshot path." },
+    "challenger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "model", "prompt_hash"],
+      "description": "Which Challenger AI setup was used for this run.",
+      "properties": {
+        "mode": { "enum": ["off", "saved", "live"], "description": "Challenger mode." },
+        "model": { "type": ["string", "null"], "description": "Model name, or null when mode is off." },
+        "prompt_hash": { "type": ["string", "null"], "description": "Short hash of the prompt, or null when mode is off." }
+      }
+    },
+    "ts": { "type": "string", "format": "date-time", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T", "description": "Time of the run (ISO 8601 date-time)." }
+  },
+  "if": { "properties": { "source": { "const": "ai-proposed" } }, "required": ["source"] },
+  "then": { "properties": { "confirmed": { "const": false } } }
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-gate.local/contract/policy.schema.json",
+  "title": "Evidence Gate policy",
+  "description": "Team rules: what READY means, high-risk paths, route order and the spot-check rate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "ready_when", "should_failures", "high_risk_paths", "ignore_paths", "routes", "spot_check"],
+  "properties": {
+    "version": { "const": 1, "description": "Policy format version. Always 1." },
+    "ready_when": { "enum": ["all_must_verified_or_waived"], "description": "What READY means." },
+    "should_failures": { "enum": ["warn", "block"], "description": "What happens when a SHOULD criterion is not verified." },
+    "high_risk_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Glob patterns of code that always gets full human review."
+    },
+    "ignore_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Glob patterns of changed files the Gate ignores."
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Checked top to bottom; the first match wins.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["route", "when"],
+        "properties": {
+          "route": {
+            "enum": ["back_to_developer", "product_owner_decides", "full_review", "focused_review", "light_review"],
+            "description": "How much human review is still needed."
+          },
+          "when": {
+            "enum": ["verdict_blocked", "verdict_needs_decision", "touches_high_risk_paths", "uncovered_changed_code", "always"],
+            "description": "The condition for this route."
+          }
+        }
+      }
+    },
+    "spot_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sample_rate", "pause_light_route_if_miss_rate_above"],
+      "description": "QA re-checks a share of light-routed changes to measure the miss rate.",
+      "properties": {
+        "sample_rate": { "type": "number", "minimum": 0, "maximum": 1, "description": "Share of light-review changes to re-check (0 to 1)." },
+        "pause_light_route_if_miss_rate_above": { "type": "number", "minimum": 0, "maximum": 1, "description": "Stop using the light route if the miss rate goes above this (0 to 1)." }
+      }
+    }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-gate.local/contract/task.schema.json",
+  "title": "Evidence Gate task spec",
+  "description": "One task spec per user story: the request, numbered acceptance criteria and worked examples with exact expected results. Written before coding.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "title", "request", "criteria"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1, "description": "Story ID, for example SHOP-102." },
+    "type": { "enum": ["new", "updated"], "description": "'new' for a new feature, 'updated' when an existing rule changes." },
+    "title": { "type": "string", "minLength": 1, "description": "Short name of the story." },
+    "request": { "type": "string", "minLength": 1, "description": "What is asked, in plain words." },
+    "previous_rule": { "type": "string", "description": "The old rule in words. Required when type is 'updated'." },
+    "revised_rule": { "type": "string", "description": "The new rule in words. Required when type is 'updated'." },
+    "check_type": {
+      "enum": ["functional", "security", "performance", "accessibility"],
+      "default": "functional",
+      "description": "Kind of check. The v1 engine runs only 'functional'."
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Where the change is expected. Used for coverage when the Challenger is off.",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Glob patterns of files the change is expected to touch."
+        }
+      }
+    },
+    "criteria": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Acceptance criteria. At least one. IDs must be unique (checked by the tests, not by this schema).",
+      "items": { "$ref": "#/$defs/criterion" }
+    },
+    "open_questions": {
+      "type": "array",
+      "description": "Known unclear points. Each one gives the label 'Needs human review', even with AI off.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "criterion"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^Q-[0-9]+$", "description": "Question ID, for example Q-1." },
+          "text": { "type": "string", "minLength": 1, "description": "The question." },
+          "criterion": {
+            "type": ["string", "null"],
+            "pattern": "^AC-[0-9]+$",
+            "description": "The criterion this question is about, or null if it is general."
+          }
+        }
+      }
+    },
+    "waivers": {
+      "type": "array",
+      "description": "Human decisions to accept a criterion without proof. All four fields are required.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "who", "why", "when"],
+        "properties": {
+          "criterion": { "type": "string", "pattern": "^AC-[0-9]+$", "description": "The criterion being waived." },
+          "who": { "type": "string", "minLength": 1, "description": "Person who approved the waiver." },
+          "why": { "type": "string", "minLength": 1, "description": "Reason for the waiver." },
+          "when": { "type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "description": "ISO date (YYYY-MM-DD)." }
+        }
+      }
+    },
+    "approved_scenarios": {
+      "type": "array",
+      "description": "Extra scenarios a human approved. Their expected values count as confirmed.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "via", "input", "expect", "approved_by"],
+        "properties": {
+          "criterion": { "type": "string", "pattern": "^AC-[0-9]+$", "description": "The criterion this scenario belongs to." },
+          "via": { "$ref": "#/$defs/via" },
+          "input": { "type": "object", "description": "Input values for the action." },
+          "expect": { "type": "object", "minProperties": 1, "description": "Expected result fields." },
+          "approved_by": { "type": "string", "minLength": 1, "description": "Person who approved the expected values." }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "updated" } }, "required": ["type"] },
+      "then": { "required": ["previous_rule", "revised_rule"] }
+    }
+  ],
+  "$defs": {
+    "via": {
+      "type": "string",
+      "pattern": "^(api|browser)\\.[a-z_]+$",
+      "description": "Which adapter action to use, written adapter.action, for example api.quote_order."
+    },
+    "example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["via", "input", "expect"],
+      "properties": {
+        "via": { "$ref": "#/$defs/via" },
+        "input": { "type": "object", "description": "Input values for the action." },
+        "expect": { "type": "object", "minProperties": 1, "description": "Expected result. Only the fields listed here are compared." }
+      }
+    },
+    "criterion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "priority", "statement"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^AC-[0-9]+$", "description": "Criterion ID, for example AC-1." },
+        "priority": { "enum": ["MUST", "SHOULD"], "description": "MUST blocks the change when not verified. SHOULD only warns." },
+        "statement": { "type": "string", "minLength": 1, "description": "One testable sentence." },
+        "examples": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/example" },
+          "description": "Worked examples: input plus expected output. Required (at least one) for MUST."
+        }
+      },
+      "if": { "properties": { "priority": { "const": "MUST" } }, "required": ["priority"] },
+      "then": { "required": ["examples"], "properties": { "examples": { "minItems": 1 } } }
+    }
+  }
+}

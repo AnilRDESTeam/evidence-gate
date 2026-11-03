@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-gate.local/contract/adapter.schema.json",
+  "title": "Evidence Gate adapter config",
+  "description": "Says WHICH URL, button or field to use for one app. Written once per app. Type 'http' talks to an API; type 'browser' drives a web page with Playwright.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "base_url", "actions", "safety"],
+  "properties": {
+    "type": { "enum": ["http", "browser"], "description": "Kind of driver that runs this adapter." },
+    "base_url": { "type": "string", "minLength": 1, "description": "Address of the running app. Local test copy only, never production." },
+    "before_each": {
+      "type": "array",
+      "description": "Steps run before every scenario, for example resetting data.",
+      "items": { "type": "object" }
+    },
+    "actions": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z_]+$" },
+      "description": "Named operations. Task examples point to them with via: adapter.action.",
+      "additionalProperties": { "type": "object" }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_hosts"],
+      "description": "Limits that keep the Gate from touching anything it should not.",
+      "properties": {
+        "allowed_hosts": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Only these hosts may be called." },
+        "blocked_paths": { "type": "array", "items": { "type": "string" }, "description": "URL path patterns that must never be called." },
+        "blocked": { "type": "array", "items": { "type": "string" }, "description": "Extra blocked items (for example words or selectors). Format is defined by the engine owner." },
+        "max_requests_per_run": { "type": "integer", "minimum": 1, "description": "Stop after this many requests in one run." }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Extra information that never decides a label.",
+      "properties": {
+        "tests_command": { "type": "string", "description": "Command that runs the existing tests. Their result is context only." }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request", "commit_field"],
+      "description": "(http only) How to ask the running app which commit it runs.",
+      "properties": {
+        "request": { "type": "string", "description": "Request to send, for example GET /api/health." },
+        "commit_field": { "type": "string", "description": "JSONPath of the commit in the response, for example $.commit." }
+      }
+    },
+    "headless": { "type": "boolean", "description": "(browser only) Run the browser without a window." },
+    "channel": { "type": ["string", "null"], "description": "(browser only) Installed browser to use, for example msedge. Null uses Playwright's Chromium." },
+    "timeout_ms": { "type": "integer", "minimum": 1, "description": "(browser only) How long to wait for a page or element, in milliseconds." }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "type": { "const": "http" } }, "required": ["type"] },
+      "then": {
+        "properties": {
+          "headless": false,
+          "channel": false,
+          "timeout_ms": false,
+          "before_each": {
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["request"],
+              "properties": { "request": { "type": "string", "description": "Request to send, for example POST /path." } }
+            }
+          },
+          "actions": { "additionalProperties": { "$ref": "#/$defs/http_action" } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "type": { "const": "browser" } }, "required": ["type"] },
+      "then": {
+        "properties": {
+          "health": false,
+          "before_each": {
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["http"],
+              "properties": { "http": { "type": "string", "description": "HTTP call to make, for example POST /path." } }
+            }
+          },
+          "actions": { "additionalProperties": { "$ref": "#/$defs/browser_action" } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "http_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["request", "read"],
+      "properties": {
+        "request": { "type": "string", "description": "Request to send, for example POST /api/cart/quote." },
+        "defaults": { "type": "object", "description": "Input values used when an example does not give them." },
+        "body": { "type": "object", "description": "Request body. \"{name}\" placeholders are replaced with input values." },
+        "read": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Result fields to collect: name to JSONPath."
+        }
+      }
+    },
+    "browser_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["steps", "read"],
+      "properties": {
+        "defaults": { "type": "object", "description": "Input values used when an example does not give them." },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "object" },
+          "description": "Browser steps in order. Open objects; the browser driver owner defines the details."
+        },
+        "read": {
+          "type": "object",
+          "additionalProperties": { "type": "object" },
+          "description": "Values to read from the page. Open objects; the browser driver owner defines the details."
+        },
+        "screenshot": { "type": "boolean", "description": "Save a screenshot for the report." }
+      }
+    }
+  }
+}

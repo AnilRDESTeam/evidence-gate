@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evidence-gate.local/contract/challenge.schema.json",
+  "title": "Evidence Gate challenge file",
+  "description": "What the Challenger AI returns: questions, a file-to-criterion map and extra scenario ideas. It never decides a label.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task", "commit", "coverage", "uncovered", "questions", "proposed_scenarios"],
+  "properties": {
+    "task": { "type": "string", "description": "Task ID." },
+    "commit": { "type": "string", "description": "Git commit the AI looked at." },
+    "model": { "type": "string", "description": "Model name. The engine adds this; the AI prompt does not ask for it." },
+    "prompt_hash": { "type": "string", "description": "Hash of the prompt. The engine adds this; the AI prompt does not ask for it." },
+    "coverage": {
+      "type": "array",
+      "description": "Changed files and the criteria they implement.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "criteria"],
+        "properties": {
+          "file": { "type": "string", "description": "Changed file path." },
+          "criteria": { "type": "array", "items": { "type": "string", "pattern": "^AC-[0-9]+$" }, "description": "Criterion IDs this file implements." }
+        }
+      }
+    },
+    "uncovered": {
+      "type": "array",
+      "description": "Changed files that no criterion explains.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "why"],
+        "properties": {
+          "file": { "type": "string", "description": "Changed file path." },
+          "why": { "type": "string", "description": "Why no criterion covers it." }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "description": "Unclear points to send to a person.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "criterion", "text"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^Q-[0-9]+$", "description": "Question ID, for example Q-1." },
+          "criterion": { "type": ["string", "null"], "pattern": "^AC-[0-9]+$", "description": "Related criterion, or null." },
+          "text": { "type": "string", "minLength": 1, "description": "The question." }
+        }
+      }
+    },
+    "proposed_scenarios": {
+      "type": "array",
+      "maxItems": 5,
+      "description": "Up to 5 extra scenario ideas. They stay unconfirmed and never change a label.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "input", "expected_guess", "why"],
+        "properties": {
+          "criterion": { "type": ["string", "null"], "pattern": "^AC-[0-9]+$", "description": "Related criterion, or null." },
+          "input": { "type": "object", "description": "Input for the scenario." },
+          "expected_guess": { "type": "object", "description": "The AI guess of the expected result. A guess, not a fact." },
+          "why": { "type": "string", "description": "Why this scenario is worth running." }
+        }
+      }
+    }
+  }
+}
