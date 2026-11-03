@@ -1,0 +1,21 @@
+=== app/config.py ===
+# Shop settings
+FREE_SHIPPING_THRESHOLD = 75.00
+STANDARD_SHIPPING = 5.99
+
+=== app/pricing/shipping.py ===
+from app.config import FREE_SHIPPING_THRESHOLD, STANDARD_SHIPPING
+
+def shipping_for(subtotal: float) -> float:
+    # Free shipping at $75 or more
+    if subtotal >= FREE_SHIPPING_THRESHOLD:
+        return 0.00
+    return STANDARD_SHIPPING
+
+=== app/data/products.json ===
+[
+  {"sku": "HOODIE-001", "price": 45.00},
+  {"sku": "BAG-001", "price": 25.00},
+  {"sku": "PEN-001", "price": 4.99},
+  {"sku": "NOTE-001", "price": 9.50}
+]
