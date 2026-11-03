@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evidence-gate"
+version = "0.1.0"
+description = "Checks AI-written changes against a written contract and reports evidence."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "ruamel.yaml",   # pure-Python YAML; PyYAML has no wheel for Python 3.15
+  "jsonschema",
+  "requests",
+  "jinja2",
+  "playwright",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic"]
+dev = ["pytest"]
+
+[project.scripts]
+evidence-gate = "evidence_gate.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
