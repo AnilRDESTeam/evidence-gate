@@ -1,0 +1,14 @@
+version: 1
+ready_when: all_must_verified_or_waived
+should_failures: warn
+high_risk_paths: ["app/payments/**", "app/customers/**"]
+ignore_paths: ["tests/**", "requirements/**", "prompts/**", "docs/**", "*.md", ".evidence-gate/**"]
+routes:                       # top to bottom, first match wins
+  - { route: back_to_developer, when: verdict_blocked }
+  - { route: product_owner_decides, when: verdict_needs_decision }
+  - { route: full_review, when: touches_high_risk_paths }
+  - { route: focused_review, when: uncovered_changed_code }
+  - { route: light_review, when: always }
+spot_check:
+  sample_rate: 0.10
+  pause_light_route_if_miss_rate_above: 0.02

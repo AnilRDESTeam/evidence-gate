@@ -1,0 +1,5 @@
+{"run_id":"r-20261105-101403","task":"SHOP-102","criterion":"AC-3","scenario":"S-AC-3-1",
+ "source":"spec-example","confirmed":true,"commit":"a41c9e2","adapter":"api","action":"quote_order",
+ "input":{"subtotal":50.00},"expected":{"shipping":5.99},"actual":{"shipping":0.00},
+ "status":"fail","error":null,"mismatches":[{"field":"shipping","expected":5.99,"actual":0.00}],
+ "challenger":{"mode":"saved","model":"claude (chat)","prompt_hash":"9b1f3c"},"ts":"2026-11-05T10:14:03Z"}

@@ -1,0 +1,35 @@
+id: SHOP-102
+type: updated
+title: Raise free-shipping threshold
+request: Raise the free-shipping threshold from $50 to $75.
+previous_rule: Orders of $50 or more ship free.
+revised_rule: Orders of $75 or more ship free.
+check_type: functional
+scope:
+  paths: ["app/config.py", "app/pricing/**"]
+criteria:
+  - id: AC-1
+    priority: MUST
+    statement: An order of exactly $75.00 ships free.
+    examples:
+      - { via: api.quote_order, input: { subtotal: 75.00 }, expect: { shipping: 0.00 } }
+  - id: AC-2
+    priority: MUST
+    statement: An order of $74.99 pays standard shipping ($5.99).
+    examples:
+      - { via: api.quote_order, input: { subtotal: 74.99 }, expect: { shipping: 5.99 } }
+  - id: AC-3
+    priority: MUST
+    statement: An order of $50.00 no longer ships free (old rule removed).
+    examples:
+      - { via: api.quote_order, input: { subtotal: 50.00 }, expect: { shipping: 5.99 } }
+  - id: AC-4
+    priority: MUST
+    statement: The customer's receipt shows the correct shipping on both sides of $75.
+    examples:
+      - via: browser.checkout_and_read_receipt
+        input: { customer: returning-customer-01, add: ["HOODIE-001", "BAG-001", "PEN-001"] }   # 74.99
+        expect: { shipping: 5.99 }
+      - via: browser.checkout_and_read_receipt
+        input: { customer: returning-customer-01, add: ["HOODIE-001", "BAG-001", "NOTE-001"] }  # 78.50
+        expect: { shipping: 0.00 }

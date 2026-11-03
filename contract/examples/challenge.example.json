@@ -1,0 +1,6 @@
+{ "task": "SHOP-102", "commit": "a41c9e2", "model": "claude", "prompt_hash": "9b1f3c",
+  "coverage": [ { "file": "app/pricing/shipping.py", "criteria": ["AC-1","AC-2","AC-3"] } ],
+  "uncovered": [ { "file": "app/catalog/products.py", "why": "Price changed; no criterion asks for this." } ],
+  "questions": [ { "id": "Q-1", "criterion": null, "text": "Is the threshold checked before or after discounts?" } ],
+  "proposed_scenarios": [ { "criterion": "AC-2", "input": { "subtotal": 74.995 },
+                            "expected_guess": { "shipping": 5.99 }, "why": "Rounding at the boundary" } ] }

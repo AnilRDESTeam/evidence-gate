@@ -1,0 +1,33 @@
+{
+  "task": "SHOP-102",
+  "title": "Raise free-shipping threshold",
+  "type": "updated",
+  "commit": "a41c9e2",
+  "base": "main",
+  "run_id": "r-20261105-101403",
+  "timestamp": "2026-11-05T10:14:05Z",
+  "challenger": { "mode": "saved", "model": "claude (chat)", "prompt_hash": "9b1f3c" },
+  "criteria": [
+    { "id": "AC-1", "priority": "MUST", "statement": "An order of exactly $75.00 ships free.",
+      "label": "verified", "reason": null, "scenarios": ["S-AC-1-1"] },
+    { "id": "AC-2", "priority": "MUST", "statement": "An order of $74.99 pays standard shipping ($5.99).",
+      "label": "not_verified", "reason": "failed", "scenarios": ["S-AC-2-1"] },
+    { "id": "AC-3", "priority": "MUST", "statement": "An order of $50.00 no longer ships free (old rule removed).",
+      "label": "not_verified", "reason": "failed", "scenarios": ["S-AC-3-1"] },
+    { "id": "AC-4", "priority": "MUST", "statement": "The customer's receipt shows the correct shipping on both sides of $75.",
+      "label": "not_verified", "reason": "failed", "scenarios": ["S-AC-4-1", "S-AC-4-2"] }
+  ],
+  "questions": [
+    { "id": "Q-1", "criterion": null, "text": "Is the threshold checked before or after discounts?" }
+  ],
+  "changed_files": ["app/config.py", "app/pricing/shipping.py"],
+  "uncovered_files": [],
+  "verdict": "BLOCKED",
+  "exit_code": 1,
+  "route": "back_to_developer",
+  "route_reason": "Verdict is BLOCKED",
+  "next_action": "The old $50 rule is still active. Fix it, then rerun `evidence-gate check`.",
+  "context": { "tests_passed": 42, "tests_total": 42 },
+  "warnings": [],
+  "contract_version": "1.0"
+}

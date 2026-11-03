@@ -1,0 +1,34 @@
+id: SHOP-101
+type: new
+title: First-order welcome discount
+request: Give new customers 10% off their first order. The receipt must show "Welcome 10%".
+check_type: functional
+scope:
+  paths: ["app/pricing/**", "app/static/**"]
+criteria:
+  - id: AC-1
+    priority: MUST
+    statement: A registered customer with no previous orders gets 10% off the subtotal.
+    examples:
+      - { via: api.quote_order, input: { customer: new-customer-01, subtotal: 40.00 }, expect: { discount: 4.00, discount_label: "Welcome 10%" } }
+  - id: AC-2
+    priority: MUST
+    statement: A returning customer gets no welcome discount.
+    examples:
+      - { via: api.quote_order, input: { customer: returning-customer-01, subtotal: 40.00 }, expect: { discount: 0.00 } }
+  - id: AC-3
+    priority: MUST
+    statement: The receipt shows the label "Welcome 10%" for a new customer's first order.
+    examples:
+      - via: browser.checkout_and_read_receipt
+        input: { customer: new-customer-01, add: ["MUG-001"] }
+        expect: { discount_label: "Welcome 10%", discount: 1.20 }
+  - id: AC-4
+    priority: SHOULD
+    statement: The discount is rounded to the nearest cent.
+    examples:
+      - { via: api.quote_order, input: { customer: new-customer-01, subtotal: 33.35 }, expect: { discount: 3.34 } }
+# Deliberately NOT defined (the Challenger should find these):
+# - Does a guest count as a "new customer"?
+# - Is the $50 free-shipping threshold checked before or after the discount?
+open_questions: []   # fill these in only for Plan C (AI off) runs
