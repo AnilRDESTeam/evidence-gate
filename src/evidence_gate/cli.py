@@ -1,7 +1,10 @@
-"""Command-line entry point. Every command is a stub for now."""
+"""Command-line entry point. Only `validate` is built; the other commands are stubs for now."""
 
 import argparse
 import sys
+
+from evidence_gate.loader import (GateInputError, check_task_consistency, find_repo_root,
+                                  load_adapter, load_policy, load_task)
 
 EXIT_HELP = "Exit codes: 0 READY, 1 BLOCKED, 2 NEEDS DECISION, 3 GATE ERROR"
 
@@ -32,12 +35,79 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def used_actions(task: dict) -> dict[str, set[str]]:
+    """Map adapter name -> actions the task asks for (from every `via: adapter.action`)."""
+    found: dict[str, set[str]] = {}
+    items = [ex for c in task["criteria"] for ex in c.get("examples", [])]
+    items += task.get("approved_scenarios", [])
+    for item in items:
+        name, action = item["via"].split(".", 1)
+        found.setdefault(name, set()).add(action)
+    return found
+
+
+def validate(task_path: str) -> int:
+    """Check the task, the policy and the adapters it uses. Exit 0 if fine, 3 (GATE ERROR) if not."""
+    errors: list[tuple[str, list[str]]] = []  # (file, problems)
+    warns: list[str] = []
+
+    def attempt(path, loader):
+        try:
+            return loader(path)
+        except GateInputError as err:
+            errors.append((str(path), err.problems))
+
+    task = attempt(task_path, load_task)
+    if task is None:
+        return report_errors(errors)
+    problems = check_task_consistency(task)
+    if problems:
+        errors.append((task_path, [f"{task_path}: {p}" for p in problems]))
+
+    config = find_repo_root(task_path) / ".evidence-gate"
+    policy = config / "policy.yaml"
+    if policy.exists():
+        attempt(policy, load_policy)
+    else:
+        warns.append(f"WARN policy not found at {policy} (the default policy will be needed)")
+
+    for name, actions in sorted(used_actions(task).items()):
+        path = config / "adapters" / f"{name}.yaml"
+        if not path.exists():
+            # Not an error: T1/T2 add the adapter files later.
+            warns.append(f"WARN adapter '{name}' not found at {path} (T1/T2 add it)")
+            continue
+        adapter = attempt(path, load_adapter)
+        if adapter:
+            missing = sorted(actions - set(adapter["actions"]))
+            if missing:
+                errors.append((str(path), [f"{path}: action '{a}' is used by the task but not defined" for a in missing]))
+
+    if errors:
+        return report_errors(errors)
+    examples = sum(len(c.get("examples", [])) for c in task["criteria"])
+    print(f"OK  {task_path}  ({task['id']}, {task['type']}, {len(task['criteria'])} criteria, {examples} examples)")
+    for line in warns:
+        print(line)
+    return 0
+
+
+def report_errors(errors: list[tuple[str, list[str]]]) -> int:
+    for file, problems in errors:
+        print(f"GATE ERROR: {file}", file=sys.stderr)
+        for problem in problems:
+            print(f"  - {problem}", file=sys.stderr)
+    return 3
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command is None:
         parser.print_help()
         return 0
+    if args.command == "validate":
+        return validate(args.task)
     # Stub: the real engine is built later, one module per session.
     print(f"evidence-gate {args.command}: not implemented yet", file=sys.stderr)
     return 3

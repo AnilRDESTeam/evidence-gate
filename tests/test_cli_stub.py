@@ -1,4 +1,4 @@
-"""CLI stubs: help works, every command exits 3 with 'not implemented yet'."""
+"""CLI: help works; the commands not built yet are stubs that exit 3 with 'not implemented yet'."""
 
 import subprocess
 import sys
@@ -34,7 +34,11 @@ def test_command_help_exits_zero(name):
     assert run_cli(name, "--help").returncode == 0
 
 
-@pytest.mark.parametrize("name,args", COMMANDS.items())
+# `validate` is built (see test_loader.py); the other three are still stubs.
+STUBS = {k: v for k, v in COMMANDS.items() if k != "validate"}
+
+
+@pytest.mark.parametrize("name,args", STUBS.items())
 def test_stub_exits_3(name, args):
     result = run_cli(name, *args)
     assert result.returncode == 3
