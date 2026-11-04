@@ -1,0 +1,57 @@
+
+--- E1  eval/shop-102-correct ---
+  run 1: READY / light_review  verified,verified,verified,verified  [challenger off]
+  run 2: READY / light_review  verified,verified,verified,verified  [challenger off]
+  run 3: READY / light_review  verified,verified,verified,verified  [challenger off]
+  run 4: READY / light_review  verified,verified,verified,verified  [challenger off]
+  run 5: READY / light_review  verified,verified,verified,verified  [challenger off]
+
+--- E2  eval/shop-102-old-rule ---
+  run 1: BLOCKED / back_to_developer  verified,failed,failed,failed  [challenger off]
+  run 2: BLOCKED / back_to_developer  verified,failed,failed,failed  [challenger off]
+  run 3: BLOCKED / back_to_developer  verified,failed,failed,failed  [challenger off]
+  run 4: BLOCKED / back_to_developer  verified,failed,failed,failed  [challenger off]
+  run 5: BLOCKED / back_to_developer  verified,failed,failed,failed  [challenger off]
+
+--- E3  eval/shop-101-correct ---
+  run 1: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 2: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 3: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 4: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 5: READY / focused_review  verified,verified,verified,verified  [challenger off]
+
+--- E4  eval/shop-101-missing-negative ---
+  run 1: BLOCKED / back_to_developer  verified,failed,verified,verified  [challenger off]
+  run 2: BLOCKED / back_to_developer  verified,failed,verified,verified  [challenger off]
+  run 3: BLOCKED / back_to_developer  verified,failed,verified,verified  [challenger off]
+  run 4: BLOCKED / back_to_developer  verified,failed,verified,verified  [challenger off]
+  run 5: BLOCKED / back_to_developer  verified,failed,verified,verified  [challenger off]
+
+--- E5  eval/shop-102-scope-creep ---
+  run 1: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 2: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 3: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 4: READY / focused_review  verified,verified,verified,verified  [challenger off]
+  run 5: READY / focused_review  verified,verified,verified,verified  [challenger off]
+
+=== Results vs answer key ===
+E1: got READY / light_review  labels verified,verified,verified,verified   stable 100% of 5 runs
+    expected READY / light_review  labels verified,verified,verified,verified
+E2: got BLOCKED / back_to_developer  labels verified,failed,failed,failed   stable 100% of 5 runs
+    expected BLOCKED / back_to_developer  labels verified,failed,failed,failed
+E3: got READY / focused_review  labels verified,verified,verified,verified   stable 100% of 5 runs
+    expected NEEDS_DECISION / product_owner_decides  labels verified,verified,verified,verified
+E4: got BLOCKED / back_to_developer  labels verified,failed,verified,verified   stable 100% of 5 runs
+    expected BLOCKED / back_to_developer  labels verified,failed,verified,verified
+E5: got READY / focused_review  labels verified,verified,verified,verified   stable 100% of 5 runs
+    expected READY / focused_review  labels verified,verified,verified,verified
+
+=== Summary ===
+Misses (expected BLOCKED, got READY):            0 
+False alarms (expected READY, got BLOCKED):      0 
+Defective changes routed to light review:        0 
+Label stability (identical results across runs): min 100%, per case [100, 100, 100, 100, 100]
+Share of runs routed to light review:            20% (5 of 25)
+Known limitation (Challenger off, run with --mode saved to see the questions):
+  - E3: READY/focused_review; the key expects NEEDS_DECISION because the Challenger raises the open questions
+off exit=0

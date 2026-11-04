@@ -1,0 +1,28 @@
+type: browser
+base_url: http://127.0.0.1:8080
+headless: true
+channel: null                  # set to "msedge" if Playwright's Chromium is blocked
+timeout_ms: 5000
+before_each:
+  - http: POST /api/test/reset
+actions:
+  checkout_and_read_receipt:
+    defaults: { customer: returning-customer-01 }
+    steps:
+      - goto: "/?customer={customer}#/"
+      - for_each: "{add}"                       # list of SKUs from the example input
+        do:
+          - click: "[data-testid=add-to-cart-{item}]"
+      - click: "[data-testid=nav-cart]"
+      - wait_for: "[data-testid=cart-total]"
+      - click: "[data-testid=place-order]"
+      - wait_for: "[data-testid=receipt-total]"
+    read:                                       # a missing element reads as null (or the 'missing' value), not an error
+      subtotal: { number: "[data-testid=receipt-subtotal]" }
+      discount: { number: "[data-testid=receipt-discount]", missing: 0.00 }
+      discount_label: { text: "[data-testid=receipt-discount-label]" }
+      shipping: { number: "[data-testid=receipt-shipping]" }
+      total: { number: "[data-testid=receipt-total]" }
+    screenshot: true                            # saved to out/screens/<scenario>.png and linked from the HTML report
+safety:
+  allowed_hosts: ["127.0.0.1", "localhost"]

@@ -1,1 +1,6 @@
 case_id,branch,task,AC-1,AC-2,AC-3,AC-4,question_expected,verdict,route,notes
+E1,eval/shop-102-correct,SHOP-102,verified,verified,verified,verified,no,READY,light_review,correct change
+E2,eval/shop-102-old-rule,SHOP-102,verified,failed,failed,failed,no,BLOCKED,back_to_developer,legacy >=50 rule: 74.99 and 50.00 ship free
+E3,eval/shop-101-correct,SHOP-101,verified,verified,verified,verified,yes,NEEDS_DECISION,product_owner_decides,open questions (saved Challenger)
+E4,eval/shop-101-missing-negative,SHOP-101,verified,failed,verified,verified,yes,BLOCKED,back_to_developer,returning customer discounted
+E5,eval/shop-102-scope-creep,SHOP-102,verified,verified,verified,verified,no,READY,focused_review,NOTE-001 price change uncovered

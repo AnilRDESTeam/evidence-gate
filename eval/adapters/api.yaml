@@ -1,0 +1,27 @@
+type: http
+base_url: http://127.0.0.1:8080          # local test copy only, never production
+health:
+  request: GET /api/health
+  commit_field: "$.commit"               # engine compares with git HEAD; mismatch = could not run
+before_each:
+  - request: POST /api/test/reset        # clean data before every scenario (APP_MODE=test only)
+actions:
+  quote_order:
+    request: POST /api/cart/quote
+    defaults: { customer: returning-customer-01 }
+    body:
+      customer_id: "{customer}"
+      # unit_price is only accepted for the hidden TEST-SKU, so the scenario subtotal is set through it
+      items: [ { sku: "TEST-SKU", qty: 1, unit_price: "{subtotal}" } ]
+    read:
+      subtotal: "$.subtotal"
+      shipping: "$.shipping"
+      discount: "$.discount"
+      discount_label: "$.discount_label"
+      total: "$.total"
+safety:
+  allowed_hosts: ["127.0.0.1", "localhost"]
+  blocked_paths: ["/api/payments/*"]     # payment is simulated, but keep the guard anyway
+  max_requests_per_run: 200
+context:
+  tests_command: ".venv\\Scripts\\python -m pytest"   # existing tests: context only; no -q because the shop's pytest.ini already has it (-qq hides the summary line)

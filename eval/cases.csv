@@ -1,1 +1,6 @@
 case_id,branch,task_file,commit,defect_origin,description
+E1,eval/shop-102-correct,requirements/SHOP-102.task.yaml,12a4eb8,none,Correct threshold change
+E2,eval/shop-102-old-rule,requirements/SHOP-102.task.yaml,b7d0762,planted,Legacy >=50 free shipping kept; tests adjusted
+E3,eval/shop-101-correct,requirements/SHOP-101.task.yaml,c32d975,none,Correct welcome discount for new registered customers
+E4,eval/shop-101-missing-negative,requirements/SHOP-101.task.yaml,3964fcb,planted,Welcome discount given to returning customers too; tests adjusted
+E5,eval/shop-102-scope-creep,requirements/SHOP-102.task.yaml,643a2d8,induced,Threshold + unrequested NOTE-001 price change

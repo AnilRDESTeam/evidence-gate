@@ -1,0 +1,2 @@
+case_id,commit,route,checked_by,date,agrees_with_gate,notes
+E1,12a4eb8,light_review,,,,PENDING: a person must check this light-routed change by hand
