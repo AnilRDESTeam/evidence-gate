@@ -111,7 +111,7 @@ It prints misses, false alarms, label stability and the share routed to light re
 | `eval/` | The five cases, the answer key, saved Challenger answers, adapters, `run_eval.py`, results |
 | `scripts/` | `demo.py` (the one-command demo) and Challenger hand-test helpers |
 | `tests/` | Unit tests, including one per rule row and a check of every contract example |
-| `docs/` | Demo script, adoption guide, limitations, and the plans |
+| `docs/` | Demo script, adoption guide, limitations, the plans, and `PROJECT-STATUS.md` (full status and handoff for a new session) |
 
 ## Install and test
 
