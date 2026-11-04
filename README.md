@@ -4,7 +4,7 @@ AI now writes a lot of code, and a person still has to decide if it is safe to m
 A written spec contains worked examples ("a $74.99 order pays $5.99 shipping"). The Gate runs every example against the real, running app, for the exact commit being reviewed, and reports what it proved and what it could not.
 It decides **how much human review a change needs**. It never removes human review.
 
-## See it work (about 5 minutes after setup)
+## See it work (about 5 minutes from a fresh clone: roughly 3 minutes of setup, then about a minute for the demo)
 
 You need Python 3.11+, git, and the `shop-demo` folder next to this one (`shop-demo` is the small web shop the Gate checks).
 
