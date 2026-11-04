@@ -71,13 +71,18 @@ def validate(task_path: str) -> int:
     else:
         warns.append(f"WARN policy not found at {policy} (the default policy will be needed)")
 
+    # Schema-check every adapter file, even ones this task does not use, so a broken file is caught early.
+    adapters = {}
+    for path in sorted((config / "adapters").glob("*.yaml")):
+        adapters[path.stem] = (path, attempt(path, load_adapter))
+
     for name, actions in sorted(used_actions(task).items()):
-        path = config / "adapters" / f"{name}.yaml"
-        if not path.exists():
+        if name not in adapters:
             # Not an error: T1/T2 add the adapter files later.
+            path = config / "adapters" / f"{name}.yaml"
             warns.append(f"WARN adapter '{name}' not found at {path} (T1/T2 add it)")
             continue
-        adapter = attempt(path, load_adapter)
+        path, adapter = adapters[name]
         if adapter:
             missing = sorted(actions - set(adapter["actions"]))
             if missing:

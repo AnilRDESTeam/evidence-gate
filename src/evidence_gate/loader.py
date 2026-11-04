@@ -70,13 +70,13 @@ def _describe(error) -> tuple[str, str]:
     if error.validator == "required":
         missing = re.match(r"'(.+?)' is a required property", message)
         name = missing.group(1) if missing else "?"
-        path = f"{path}.{name}" if path else name
+        # Keep the parent path and name the missing field, e.g. criteria[0]: 'priority' is required
         hints = {
             "examples": "required for a MUST criterion",
             "previous_rule": "required when type is 'updated'",
             "revised_rule": "required when type is 'updated'",
         }
-        message = hints.get(name, "required field is missing")
+        message = f"'{name}' is {hints.get(name, 'required')}"
     elif error.validator == "minItems" and path.endswith("examples"):
         message = "a MUST criterion needs at least one example"
     elif error.validator in ("anyOf", "oneOf", "if", "then"):

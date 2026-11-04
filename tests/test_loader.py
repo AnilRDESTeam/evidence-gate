@@ -74,7 +74,38 @@ def test_top_level_must_be_mapping(tmp_path):
 def test_must_without_examples(tmp_path):
     result = validate(make_task(tmp_path, GOOD.split("    examples:")[0]))
     assert result.returncode == 3
-    assert "criteria[0].examples: required for a MUST criterion" in result.stderr
+    assert "criteria[0]: 'examples' is required for a MUST criterion" in result.stderr
+
+
+def test_missing_priority_message_is_plain(tmp_path):
+    result = validate(make_task(tmp_path, GOOD.replace("    priority: MUST\n", "")))
+    assert result.returncode == 3
+    assert "T.task.yaml: criteria[0]: 'priority' is required" in result.stderr
+
+
+def test_wrong_type_is_reported_with_field_path(tmp_path):
+    # examples must be a list, not a string
+    text = GOOD.split("    examples:")[0] + "    examples: nope\n"
+    result = validate(make_task(tmp_path, text))
+    assert result.returncode == 3
+    assert "criteria[0].examples" in result.stderr
+
+
+def test_tab_indentation_is_a_yaml_error(tmp_path):
+    # Tabs are not allowed for YAML indentation; the user should get a line number, not a traceback.
+    task = make_task(tmp_path, "id: T-1\ncriteria:\n\t- id: AC-1\n")
+    result = validate(task)
+    assert result.returncode == 3
+    assert "YAML syntax error at line" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_unused_invalid_adapter_is_still_reported(tmp_path):
+    config = with_config(tmp_path)
+    (config / "adapters" / "browser.yaml").write_text("type: browser\n", encoding="utf-8")
+    result = validate(make_task(tmp_path, GOOD))
+    assert result.returncode == 3
+    assert "browser.yaml" in result.stderr
 
 
 def test_updated_without_previous_rule(tmp_path):
