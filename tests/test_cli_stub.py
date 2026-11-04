@@ -34,8 +34,8 @@ def test_command_help_exits_zero(name):
     assert run_cli(name, "--help").returncode == 0
 
 
-# `validate` is built (see test_loader.py); the other three are still stubs.
-STUBS = {k: v for k, v in COMMANDS.items() if k != "validate"}
+# `validate` (test_loader.py) and `adapter-test` (test_http_driver.py) are built; the rest are still stubs.
+STUBS = {k: v for k, v in COMMANDS.items() if k not in ("validate", "adapter-test")}
 
 
 @pytest.mark.parametrize("name,args", STUBS.items())

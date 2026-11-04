@@ -18,7 +18,7 @@ dependencies = [
 
 [project.optional-dependencies]
 anthropic = ["anthropic"]
-dev = ["pytest"]
+dev = ["pytest", "responses"]   # responses fakes HTTP in driver tests
 
 [project.scripts]
 evidence-gate = "evidence_gate.cli:main"

@@ -1,7 +1,9 @@
-"""Command-line entry point. Only `validate` is built; the other commands are stubs for now."""
+"""Command-line entry point. `validate` and `adapter-test` are built; the other commands are stubs for now."""
 
 import argparse
+import json
 import sys
+from pathlib import Path
 
 from evidence_gate.loader import (GateInputError, check_task_consistency, find_repo_root,
                                   load_adapter, load_policy, load_task)
@@ -97,6 +99,34 @@ def validate(task_path: str) -> int:
     return 0
 
 
+def adapter_test(adapter_name: str, action: str, input_file: str) -> int:
+    """Run one adapter action by hand and print what the driver saw. Exit 0 if no error, else 3."""
+    from evidence_gate.drivers import build_driver
+
+    try:
+        path = Path.cwd() / ".evidence-gate" / "adapters" / f"{adapter_name}.yaml"
+        config = load_adapter(path)
+        inputs = json.loads(Path(input_file).read_text(encoding="utf-8"))
+        if not isinstance(inputs, dict):
+            raise GateInputError([f"{input_file}: the input must be a JSON object like {{\"subtotal\": 50}}"])
+    except GateInputError as err:
+        return report_errors([(str(adapter_name), err.problems)])
+    except (OSError, ValueError) as err:
+        return report_errors([(str(input_file), [f"{input_file}: cannot read input: {err}"])])
+
+    try:
+        driver = build_driver(config, str(Path.cwd()), str(Path.cwd() / "out"))
+    except (ImportError, ValueError) as err:
+        return report_errors([(adapter_name, [f"cannot build the '{config['type']}' driver: {err}"])])
+    try:
+        driver.before_each()
+        result = driver.run(action, inputs)
+    finally:
+        driver.close()
+    print(json.dumps({"actual": result.actual, "error": result.error, "artifacts": result.artifacts}, indent=2))
+    return 3 if result.error else 0
+
+
 def report_errors(errors: list[tuple[str, list[str]]]) -> int:
     for file, problems in errors:
         print(f"GATE ERROR: {file}", file=sys.stderr)
@@ -113,6 +143,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "validate":
         return validate(args.task)
+    if args.command == "adapter-test":
+        return adapter_test(args.adapter, args.action, args.input_file)
     # Stub: the real engine is built later, one module per session.
     print(f"evidence-gate {args.command}: not implemented yet", file=sys.stderr)
     return 3
