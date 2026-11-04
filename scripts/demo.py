@@ -9,6 +9,7 @@ Needs: Python 3.11+, git, and the shop-demo folder next to this one. Standard li
 """
 
 import argparse
+import re
 import shutil
 import subprocess
 import sys
@@ -78,6 +79,27 @@ def preflight(shop: Path) -> list[str]:
     return problems
 
 
+def install_shop(shop: Path) -> None:
+    """Install the shop's packages the way its own README does. On a very new Python (3.15) that fails:
+    `uvicorn[standard]` pulls in PyYAML, which has no ready-made package there and needs a C++ compiler.
+    Plain uvicorn is enough to run the shop, so retry with the optional extras removed."""
+    python = venv_python(shop)
+    try:
+        run([python, "-m", "pip", "install", "-q", "-r", "requirements-dev.txt"], shop)
+        return
+    except subprocess.CalledProcessError:
+        print("  That failed (often PyYAML on a very new Python). Retrying without uvicorn's optional extras ...")
+    lines = []
+    for name in ("requirements.txt", "requirements-dev.txt"):
+        for line in (shop / name).read_text(encoding="utf-8").splitlines():
+            line = line.split("#")[0].strip()
+            if line and not line.startswith("-r"):
+                lines.append(re.sub(r"\[[^\]]*\]", "", line))      # uvicorn[standard]==0.54.0 -> uvicorn==0.54.0
+    plain = Path(tempfile.mkdtemp()) / "shop-requirements.txt"
+    plain.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    run([python, "-m", "pip", "install", "-q", "-r", plain], shop)
+
+
 def setup(shop: Path) -> int:
     print("Setting up. This installs packages and a test browser (a few minutes, needs internet).\n")
     for folder, install in ((ROOT, ["-e", "."]), (shop, ["-r", "requirements.txt"])):
@@ -87,7 +109,10 @@ def setup(shop: Path) -> int:
         if not venv_python(folder).exists():
             print(f"Creating a virtual environment in {folder} ...")
             venv.create(folder / ".venv", with_pip=True)
-        run([venv_python(folder), "-m", "pip", "install", "-q", *install], folder)
+        if folder == shop:
+            install_shop(shop)
+        else:
+            run([venv_python(folder), "-m", "pip", "install", "-q", *install], folder)
     # A fresh clone only has the test branches as origin/eval/*; the demo needs local ones.
     have = subprocess.run(["git", "branch", "--list", "eval/*", "--format=%(refname:short)"], cwd=shop,
                           capture_output=True, text=True).stdout.split()
