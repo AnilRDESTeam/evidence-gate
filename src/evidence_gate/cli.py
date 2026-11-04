@@ -1,4 +1,4 @@
-"""Command-line entry point. `validate` and `adapter-test` are built; the other commands are stubs for now."""
+"""Command-line entry point. `validate`, `adapter-test` and `check` are built; the other commands are stubs for now."""
 
 import argparse
 import json
@@ -143,6 +143,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "validate":
         return validate(args.task)
+    if args.command == "check":
+        from evidence_gate.check import run_check
+        return run_check(args.task, args.base, args.out, args.challenger or "off", args.challenge_file, args.no_tests)
     if args.command == "adapter-test":
         return adapter_test(args.adapter, args.action, args.input_file)
     # Stub: the real engine is built later, one module per session.
