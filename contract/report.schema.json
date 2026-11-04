@@ -64,6 +64,25 @@
     },
     "changed_files": { "type": "array", "items": { "type": "string" }, "description": "Changed files, after ignore_paths." },
     "uncovered_files": { "type": "array", "items": { "type": "string" }, "description": "Changed files no criterion covers." },
+    "high_risk_files": { "type": "array", "items": { "type": "string" }, "description": "Changed files (after ignore_paths) that match a high_risk_paths pattern. Optional; added in contract 1.0.1." },
+    "ai_suggestions": {
+      "type": "array",
+      "description": "Scenarios proposed by the Challenger AI and run, shown for information only. They never change a label. Optional; added in contract 1.0.1.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scenario", "criterion", "input", "expected", "actual", "status", "error"],
+        "properties": {
+          "scenario": { "type": "string", "description": "Scenario ID, for example S-AI-1." },
+          "criterion": { "type": ["string", "null"], "pattern": "^AC-[0-9]+$", "description": "Related criterion, or null." },
+          "input": { "type": "object", "description": "Input given to the action." },
+          "expected": { "type": "object", "description": "The AI's guess of the expected result. A guess, not a fact." },
+          "actual": { "type": ["object", "null"], "description": "What the driver saw, or null if it could not run." },
+          "status": { "enum": ["pass", "fail", "error"], "description": "Result of comparing the guess with what was seen." },
+          "error": { "type": ["string", "null"], "description": "Error text, or null when it ran fine." }
+        }
+      }
+    },
     "verdict": { "enum": ["READY", "BLOCKED", "NEEDS DECISION", "GATE ERROR"], "description": "The one answer for this change." },
     "exit_code": { "enum": [0, 1, 2, 3], "description": "0 READY, 1 BLOCKED, 2 NEEDS DECISION, 3 GATE ERROR." },
     "route": {

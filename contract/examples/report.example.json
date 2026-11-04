@@ -22,6 +22,11 @@
   ],
   "changed_files": ["app/config.py", "app/pricing/shipping.py"],
   "uncovered_files": [],
+  "high_risk_files": [],
+  "ai_suggestions": [
+    { "scenario": "S-AI-1", "criterion": "AC-2", "input": { "subtotal": 74.995 }, "expected": { "shipping": 5.99 },
+      "actual": { "shipping": 0.0 }, "status": "fail", "error": null }
+  ],
   "verdict": "BLOCKED",
   "exit_code": 1,
   "route": "back_to_developer",

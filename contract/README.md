@@ -1,6 +1,6 @@
 # Gate Contract
 
-Version: **1.0.0**
+Version: **1.0.1**
 
 The contract defines what a task spec, adapter config, policy, evidence record, challenge file and report must look like, plus the fixed rules that decide labels, verdicts and routes.
 
@@ -16,3 +16,7 @@ The contract defines what a task spec, adapter config, policy, evidence record, 
 - `examples/`: one valid example for each schema
 
 Any change after the freeze needs Anil's approval and a version bump.
+
+## Changes
+
+- **1.0.1** (approved by Anil): `report.schema.json` gains two optional fields, `high_risk_files` and `ai_suggestions`. Existing 1.0 reports stay valid, so `contract_version` in a report is still `"1.0"`.
