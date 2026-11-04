@@ -1,0 +1,176 @@
+{
+  "mode": "off",
+  "generated": "2026-11-04 17:30",
+  "runs": 5,
+  "metrics": {
+    "misses": [],
+    "false_alarms": [],
+    "held_up": [],
+    "light_defects": [],
+    "stability_min": 100,
+    "light_share": "20% (5 of 25)"
+  },
+  "known": [
+    "E3: READY/focused_review; the key expects NEEDS_DECISION because the Challenger raises the open questions"
+  ],
+  "differences": [],
+  "cases": [
+    {
+      "case_id": "E1",
+      "branch": "eval/shop-102-correct",
+      "description": "Correct threshold change",
+      "origin": "none",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "READY",
+        "route": "light_review",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "expected": {
+        "verdict": "READY",
+        "route": "light_review",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "match",
+      "notes": [],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E1\\off\\run5"
+    },
+    {
+      "case_id": "E2",
+      "branch": "eval/shop-102-old-rule",
+      "description": "Legacy >=50 free shipping kept; tests adjusted",
+      "origin": "planted",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "failed",
+          "AC-3": "failed",
+          "AC-4": "failed"
+        }
+      },
+      "expected": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "failed",
+          "AC-3": "failed",
+          "AC-4": "failed"
+        }
+      },
+      "status": "match",
+      "notes": [],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E2\\off\\run5"
+    },
+    {
+      "case_id": "E3",
+      "branch": "eval/shop-101-correct",
+      "description": "Correct welcome discount for new registered customers",
+      "origin": "none",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "READY",
+        "route": "focused_review",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "expected": {
+        "verdict": "NEEDS_DECISION",
+        "route": "product_owner_decides",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "known",
+      "notes": [
+        "READY/focused_review; the key expects NEEDS_DECISION because the Challenger raises the open questions"
+      ],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E3\\off\\run5"
+    },
+    {
+      "case_id": "E4",
+      "branch": "eval/shop-101-missing-negative",
+      "description": "Welcome discount given to returning customers too; tests adjusted",
+      "origin": "planted",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "failed",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "expected": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "failed",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "match",
+      "notes": [],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E4\\off\\run5"
+    },
+    {
+      "case_id": "E5",
+      "branch": "eval/shop-102-scope-creep",
+      "description": "Threshold + unrequested NOTE-001 price change",
+      "origin": "induced",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "READY",
+        "route": "focused_review",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "expected": {
+        "verdict": "READY",
+        "route": "focused_review",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "match",
+      "notes": [],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E5\\off\\run5"
+    }
+  ]
+}

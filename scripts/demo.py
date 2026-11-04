@@ -157,17 +157,29 @@ def main() -> int:
     print("\nStarting (about a minute per case) ...\n")
 
     sys.stdout.flush()   # so this text appears before the runner's output
-    results = Path(tempfile.mkdtemp()) / "demo-results.csv"   # keep the real eval/results.csv untouched
+    work = Path(tempfile.mkdtemp())   # keep the real eval/results.csv and eval/overview untouched
     code = subprocess.run([sys.executable, str(ROOT / "eval" / "run_eval.py"), "--cases", ",".join(cases),
-                           "--runs", "1", "--mode", args.mode, "--shop", str(shop), "--results", str(results)]).returncode
+                           "--runs", "1", "--mode", args.mode, "--shop", str(shop), "--results", str(work / "results.csv"),
+                           "--pdf", "--overview-dir", str(work)]).returncode
 
-    print("\nFull reports (open in a browser):")
+    # The mode is part of the report path; a case without a saved Challenger answer falls back to "off".
+    print("\nReports (a PDF and an HTML page for each case):")
+    to_open = []
+    overview = work / f"overview-{args.mode}.pdf"
+    if overview.exists():
+        print(f"  OVERVIEW of all cases: {overview}")
+        to_open.append(overview)
     for case in cases:
-        report = shop / "out" / case / "run1" / "report.html"
-        if report.exists():
-            print(f"  {case}: {report}")
-            if not args.no_open:
-                webbrowser.open(report.as_uri())
+        for mode in (args.mode, "off"):
+            folder = shop / "out" / case / mode / "run1"
+            if (folder / "report.html").exists():
+                shown = folder / "report.pdf" if (folder / "report.pdf").exists() else folder / "report.html"
+                print(f"  {case}: {shown}")
+                to_open.append(shown)
+                break
+    if not args.no_open:
+        for path in to_open:
+            webbrowser.open(path.as_uri())
     print("\nVerdicts: READY = nothing found, a person only skims it. BLOCKED = a written example failed, "
           "back to the developer.\nNEEDS DECISION = the spec leaves a question open, the product owner answers it.")
     return code

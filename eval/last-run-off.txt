@@ -33,6 +33,7 @@
   run 3: READY / focused_review  verified,verified,verified,verified  [challenger off]
   run 4: READY / focused_review  verified,verified,verified,verified  [challenger off]
   run 5: READY / focused_review  verified,verified,verified,verified  [challenger off]
+Note: the shop was on 'gate-adapters' when this started; it is now on main.
 
 === Results vs answer key ===
 E1: got READY / light_review  labels verified,verified,verified,verified   stable 100% of 5 runs
@@ -49,9 +50,13 @@ E5: got READY / focused_review  labels verified,verified,verified,verified   sta
 === Summary ===
 Misses (expected BLOCKED, got READY):            0 
 False alarms (expected READY, got BLOCKED):      0 
+Correct changes held up by questions (READY->NEEDS DECISION): 0 
 Defective changes routed to light review:        0 
 Label stability (identical results across runs): min 100%, per case [100, 100, 100, 100, 100]
 Share of runs routed to light review:            20% (5 of 25)
 Known limitation (Challenger off, run with --mode saved to see the questions):
   - E3: READY/focused_review; the key expects NEEDS_DECISION because the Challenger raises the open questions
+
+Overview: C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\overview-off.html
+PDF:      C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\overview-off.pdf
 off exit=0

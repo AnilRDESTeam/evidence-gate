@@ -21,7 +21,7 @@ Three AI-written changes are checked, each on its own branch of the shop:
 | E4: the AI gave the new-customer discount to returning customers too, and edited the tests to match | **BLOCKED** | A written example failed. **All 58 of the shop's own tests pass**, which is why a green test run is not proof. |
 | E1: correct change | **READY**, light review | Every written example passed on this commit. A person skims the evidence and approves. |
 
-`python scripts/demo.py --all` runs all five cases. `python scripts/demo.py --mode saved` also uses a second AI (the "Challenger") that asks questions and flags changed files nobody asked for.
+The demo opens an **overview PDF** (every case and its status on the first page, then one page per case) and a PDF for each case. `python scripts/demo.py --all` runs all five cases. `python scripts/demo.py --mode saved` also uses a second AI (the "Challenger") that asks questions and flags changed files nobody asked for.
 Presenting this? See [docs/DEMO.md](docs/DEMO.md) for a script.
 
 ## How a decision is made
@@ -71,7 +71,7 @@ copy ..\evidence-gate\eval\adapters\*.yaml .evidence-gate\adapters\
 echo $LASTEXITCODE
 ```
 
-It prints the verdict and writes `out\report.html` (the readable report), `out\report.md` (paste into a pull request), `out\report.json` and `out\evidence.jsonl` (every scenario that ran).
+It prints the verdict and writes `out\report.html` (the readable report), `out\report.pdf` (the same report as a PDF, to print or send), `out\report.md` (paste into a pull request), `out\report.json` and `out\evidence.jsonl` (every scenario that ran). Add `--no-pdf` to skip the PDF.
 
 Other commands:
 
@@ -81,6 +81,7 @@ evidence-gate adapter-test --adapter api --action quote_order --input-file in.js
 evidence-gate challenge-prompt --task requirements\SHOP-102.task.yaml  # the prompt to give the Challenger AI
 evidence-gate check --task ... --challenger saved --challenge-file challenge.json    # use its saved answer
 evidence-gate check --task ... --no-tests                              # skip the shop's own tests
+evidence-gate overview --summary eval\overview\summary-off.json        # rebuild the all-cases overview PDF
 ```
 
 ## The evaluation
@@ -92,7 +93,7 @@ python eval/run_eval.py --mode off --runs 5       # Challenger off
 python eval/run_eval.py --mode saved --runs 5     # saved Challenger answers from eval/challenges/
 ```
 
-It prints misses, false alarms, label stability and the share routed to light review. Results go to `eval/results.csv`. What the Gate cannot do is written down in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+It prints misses, false alarms, label stability and the share routed to light review. Results go to `eval/results.csv`, and a document with **every case and its status** is written to `eval/overview/overview-off.pdf` and `overview-saved.pdf` (HTML copies beside them), with one page per case. What the Gate cannot do is written down in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 ## Use it on another project
 

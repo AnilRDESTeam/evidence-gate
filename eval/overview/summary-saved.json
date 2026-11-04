@@ -1,0 +1,189 @@
+{
+  "mode": "saved",
+  "generated": "2026-11-04 17:33",
+  "runs": 5,
+  "metrics": {
+    "misses": [],
+    "false_alarms": [],
+    "held_up": [
+      "E1",
+      "E5"
+    ],
+    "light_defects": [],
+    "stability_min": 100,
+    "light_share": "0% (0 of 25)"
+  },
+  "known": [],
+  "differences": [
+    "E1: AC-1 is needs_human_review, the key says verified",
+    "E1: AC-4 is needs_human_review, the key says verified",
+    "E2: AC-1 is needs_human_review, the key says verified",
+    "E5: AC-1 is needs_human_review, the key says verified",
+    "E5: AC-4 is needs_human_review, the key says verified"
+  ],
+  "cases": [
+    {
+      "case_id": "E1",
+      "branch": "eval/shop-102-correct",
+      "description": "Correct threshold change",
+      "origin": "none",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "NEEDS_DECISION",
+        "route": "product_owner_decides",
+        "labels": {
+          "AC-1": "needs_human_review",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "needs_human_review"
+        }
+      },
+      "expected": {
+        "verdict": "READY",
+        "route": "light_review",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "held_up",
+      "notes": [
+        "AC-1 is needs human review, the key says verified",
+        "AC-4 is needs human review, the key says verified"
+      ],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E1\\saved\\run5"
+    },
+    {
+      "case_id": "E2",
+      "branch": "eval/shop-102-old-rule",
+      "description": "Legacy >=50 free shipping kept; tests adjusted",
+      "origin": "planted",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "needs_human_review",
+          "AC-2": "failed",
+          "AC-3": "failed",
+          "AC-4": "failed"
+        }
+      },
+      "expected": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "failed",
+          "AC-3": "failed",
+          "AC-4": "failed"
+        }
+      },
+      "status": "differs",
+      "notes": [
+        "AC-1 is needs human review, the key says verified"
+      ],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E2\\saved\\run5"
+    },
+    {
+      "case_id": "E3",
+      "branch": "eval/shop-101-correct",
+      "description": "Correct welcome discount for new registered customers",
+      "origin": "none",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "NEEDS_DECISION",
+        "route": "product_owner_decides",
+        "labels": {
+          "AC-1": "needs_human_review",
+          "AC-2": "verified",
+          "AC-3": "needs_human_review",
+          "AC-4": "needs_human_review"
+        }
+      },
+      "expected": {
+        "verdict": "NEEDS_DECISION",
+        "route": "product_owner_decides",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "match",
+      "notes": [],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E3\\saved\\run5"
+    },
+    {
+      "case_id": "E4",
+      "branch": "eval/shop-101-missing-negative",
+      "description": "Welcome discount given to returning customers too; tests adjusted",
+      "origin": "planted",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "needs_human_review",
+          "AC-2": "failed",
+          "AC-3": "needs_human_review",
+          "AC-4": "needs_human_review"
+        }
+      },
+      "expected": {
+        "verdict": "BLOCKED",
+        "route": "back_to_developer",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "failed",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "match",
+      "notes": [],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E4\\saved\\run5"
+    },
+    {
+      "case_id": "E5",
+      "branch": "eval/shop-102-scope-creep",
+      "description": "Threshold + unrequested NOTE-001 price change",
+      "origin": "induced",
+      "runs": 5,
+      "stable_pct": 100,
+      "got": {
+        "verdict": "NEEDS_DECISION",
+        "route": "product_owner_decides",
+        "labels": {
+          "AC-1": "needs_human_review",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "needs_human_review"
+        }
+      },
+      "expected": {
+        "verdict": "READY",
+        "route": "focused_review",
+        "labels": {
+          "AC-1": "verified",
+          "AC-2": "verified",
+          "AC-3": "verified",
+          "AC-4": "verified"
+        }
+      },
+      "status": "held_up",
+      "notes": [
+        "AC-1 is needs human review, the key says verified",
+        "AC-4 is needs human review, the key says verified"
+      ],
+      "report_dir": "C:\\Users\\anikumar\\Desktop\\HackathonProjects\\shop-demo\\out\\E5\\saved\\run5"
+    }
+  ]
+}

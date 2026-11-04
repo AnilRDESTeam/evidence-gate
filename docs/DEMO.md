@@ -1,6 +1,6 @@
 # Demo script (5 minutes)
 
-Before you go on stage: run `python scripts/demo.py` once so you know it works on this machine, and keep the two reports open in browser tabs as a backup. Nothing else needs to be running; the demo starts and stops its own shop.
+Before you go on stage: run `python scripts/demo.py` once so you know it works on this machine. It opens an **overview PDF** (every case and its status on page one, then one page per case) plus a PDF for each case: keep those open as a backup. The committed `eval/overview/overview-off.pdf` and `overview-saved.pdf` (all five cases, 5 runs each) make good handouts. Nothing else needs to be running; the demo starts and stops its own shop.
 
 ## The story in one breath
 

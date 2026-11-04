@@ -49,15 +49,22 @@ E5: got NEEDS_DECISION / product_owner_decides  labels needs_human_review,verifi
 === Summary ===
 Misses (expected BLOCKED, got READY):            0 
 False alarms (expected READY, got BLOCKED):      0 
+Correct changes held up by questions (READY->NEEDS DECISION): 2 ['E1', 'E5']
 Defective changes routed to light review:        0 
 Label stability (identical results across runs): min 100%, per case [100, 100, 100, 100, 100]
 Share of runs routed to light review:            0% (0 of 25)
 Other differences from the key:
-  - E1: verdict/route NEEDS_DECISION/product_owner_decides instead of READY/light_review
   - E1: AC-1 is needs_human_review, the key says verified
   - E1: AC-4 is needs_human_review, the key says verified
   - E2: AC-1 is needs_human_review, the key says verified
-  - E5: verdict/route NEEDS_DECISION/product_owner_decides instead of READY/focused_review
   - E5: AC-1 is needs_human_review, the key says verified
   - E5: AC-4 is needs_human_review, the key says verified
-saved exit=0
+
+Overview: C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\overview-saved.html
+PDF:      C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\overview-saved.pdf
+  case:   C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\cases-saved\E1.pdf
+  case:   C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\cases-saved\E2.pdf
+  case:   C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\cases-saved\E3.pdf
+  case:   C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\cases-saved\E4.pdf
+  case:   C:\Users\anikumar\Desktop\HackathonProjects\evidence-gate\eval\overview\cases-saved\E5.pdf
+saved exit=1

@@ -165,14 +165,21 @@ def challenge_file(case_id: str, shop: Path) -> Path | None:
     return None
 
 
-def run_gate(shop: Path, case: dict, run: int, mode: str) -> dict:
-    out = f"out/{case['case_id']}/run{run}"
-    command = [venv_python(ROOT), "-m", "evidence_gate.cli", "check", "--task", case["task_file"], "--out", out]
-    used = "off"
+def report_folder(case_id: str, mode: str, run: int) -> str:
+    """Where one run's reports go, relative to the shop. The mode is part of the path so that a saved-mode run
+    never overwrites the Challenger-off reports of the same case."""
+    return f"out/{case_id}/{mode}/run{run}"
+
+
+def run_gate(shop: Path, case: dict, run: int, mode: str, pdf: bool = False) -> dict:
     saved = challenge_file(case["case_id"], shop) if mode == "saved" else None
+    used = "saved" if saved else "off"
+    out = report_folder(case["case_id"], used, run)
+    command = [venv_python(ROOT), "-m", "evidence_gate.cli", "check", "--task", case["task_file"], "--out", out]
     if saved:
         command += ["--challenger", "saved", "--challenge-file", str(saved)]
-        used = "saved"
+    if not pdf:
+        command.append("--no-pdf")   # a PDF per run would add minutes to a 25-run evaluation; the overview has one
     done = subprocess.run(command, cwd=shop, capture_output=True, text=True, encoding="utf-8")
     result = {"case_id": case["case_id"], "run": run, "mode": used, "verdict": "GATE ERROR", "route": "",
               **{column: "n/a" for column in AC_COLUMNS}}
@@ -195,61 +202,86 @@ def signature(result: dict) -> tuple:
 
 # ---- the comparison ----
 
-def compare(results: list[dict], expected: dict[str, dict]) -> int:
-    """Print the summary. Returns 1 if any defective change was missed or any correct change raised an alarm."""
+def compare(results: list[dict], expected: dict[str, dict], cases: dict[str, dict] | None = None,
+            shop_folder: Path | None = None, summary_path: Path | None = None, mode: str = "off") -> int:
+    """Print the summary and (with summary_path) write it as JSON for the overview document.
+    Returns 1 if a defect was missed or a correct change raised an alarm."""
+    cases = cases or {}
     by_case: dict[str, list[dict]] = {}
     for r in results:
         by_case.setdefault(r["case_id"], []).append(r)
 
     misses, false_alarms, differences, light_defects, known, unwanted_questions = [], [], [], [], [], []
+    case_summaries = []
     print("\n=== Results vs answer key ===")
     for case_id, runs in by_case.items():
         common, count = Counter(signature(r) for r in runs).most_common(1)[0]
         got = dict(zip(("verdict", "route", *AC_COLUMNS), common))
         want = expected.get(case_id)
         stable = 100 * count // len(runs)
-        line = f"{case_id}: got {got['verdict']} / {got['route'] or '-'}  labels " + \
-               ",".join(got[c] for c in AC_COLUMNS) + f"   stable {stable}% of {len(runs)} runs"
-        print(line)
+        print(f"{case_id}: got {got['verdict']} / {got['route'] or '-'}  labels " + ",".join(got[c] for c in AC_COLUMNS)
+              + f"   stable {stable}% of {len(runs)} runs")
+        status, notes = "match", []
         if want is None:
             print("    (no row in expected.csv)")
-            continue
-        print(f"    expected {want['verdict']} / {want['route']}  labels " + ",".join(want[c] for c in AC_COLUMNS))
-        if want["verdict"] != "READY" and got["route"] == "light_review":
-            light_defects.append(case_id)
-        if want["verdict"] == "BLOCKED" and got["verdict"] == "READY":
-            misses.append(case_id)
-        elif want["verdict"] == "READY" and got["verdict"] == "BLOCKED":
-            false_alarms.append(case_id)
-        elif want["verdict"] == "READY" and got["verdict"] == "NEEDS_DECISION":
-            # A correct change that the Challenger's questions held up: a person is asked something needlessly.
-            unwanted_questions.append(case_id)
-        elif (got["verdict"], got["route"]) != (want["verdict"], want["route"]):
-            if runs[0]["mode"] == "off" and want["question_expected"] == "yes" and got["verdict"] == "READY":
-                # The key expects a question that only the Challenger AI can raise; with it off the Gate cannot.
-                known.append(f"{case_id}: {got['verdict']}/{got['route']}; the key expects {want['verdict']} "
-                             "because the Challenger raises the open questions")
-                continue
-            differences.append(f"{case_id}: verdict/route {got['verdict']}/{got['route']} "
-                               f"instead of {want['verdict']}/{want['route']}")
-        for column in AC_COLUMNS:
-            if got[column] == want[column]:
-                continue
-            # With an open question the Gate must not call a criterion Verified, so this is expected, not an error.
-            if got[column] == "needs_human_review" and want["question_expected"] == "yes":
-                continue
-            differences.append(f"{case_id}: {column} is {got[column]}, the key says {want[column]}")
+            status, notes = "differs", ["no row in the answer key"]
+        else:
+            print(f"    expected {want['verdict']} / {want['route']}  labels " + ",".join(want[c] for c in AC_COLUMNS))
+            if want["verdict"] != "READY" and got["route"] == "light_review":
+                light_defects.append(case_id)
+            if want["verdict"] == "BLOCKED" and got["verdict"] == "READY":
+                misses.append(case_id)
+                status = "miss"
+            elif want["verdict"] == "READY" and got["verdict"] == "BLOCKED":
+                false_alarms.append(case_id)
+                status = "false_alarm"
+            elif want["verdict"] == "READY" and got["verdict"] == "NEEDS_DECISION":
+                # A correct change that the Challenger's questions held up: a person is asked something needlessly.
+                unwanted_questions.append(case_id)
+                status = "held_up"
+            elif (got["verdict"], got["route"]) != (want["verdict"], want["route"]):
+                if runs[0]["mode"] == "off" and want["question_expected"] == "yes" and got["verdict"] == "READY":
+                    # The key expects a question that only the Challenger AI can raise; with it off the Gate cannot.
+                    note = (f"{got['verdict']}/{got['route']}; the key expects {want['verdict']} "
+                            "because the Challenger raises the open questions")
+                    known.append(f"{case_id}: {note}")
+                    status, notes = "known", [note]
+                else:
+                    differences.append(f"{case_id}: verdict/route {got['verdict']}/{got['route']} "
+                                       f"instead of {want['verdict']}/{want['route']}")
+                    status = "differs"
+            for column in AC_COLUMNS:
+                if got[column] == want[column]:
+                    continue
+                # With an open question the Gate must not call a criterion Verified, so this is expected, not an error.
+                if got[column] == "needs_human_review" and want["question_expected"] == "yes":
+                    continue
+                differences.append(f"{case_id}: {column} is {got[column]}, the key says {want[column]}")
+                notes.append(f"{column} is {got[column].replace('_', ' ')}, the key says {want[column].replace('_', ' ')}")
+                if status == "match":
+                    status = "differs"
+        last_run = max(r["run"] for r in runs)
+        case_summaries.append({
+            "case_id": case_id, "branch": cases.get(case_id, {}).get("branch", ""),
+            "description": cases.get(case_id, {}).get("description", ""),
+            "origin": cases.get(case_id, {}).get("defect_origin", ""), "runs": len(runs), "stable_pct": stable,
+            "got": {"verdict": got["verdict"], "route": got["route"], "labels": {c: got[c] for c in AC_COLUMNS}},
+            "expected": None if want is None else {"verdict": want["verdict"], "route": want["route"],
+                                                   "labels": {c: want[c] for c in AC_COLUMNS}},
+            "status": status, "notes": notes,
+            "report_dir": str(shop_folder / report_folder(case_id, runs[0]["mode"], last_run)) if shop_folder else None})
 
     light = sum(r["route"] == "light_review" for r in results)
+    stabilities = [100 * Counter(signature(r) for r in runs).most_common(1)[0][1] // len(runs)
+                   for runs in by_case.values()]
+    light_share = f"{100 * light // max(len(results), 1)}% ({light} of {len(results)})"
     print("\n=== Summary ===")
     print(f"Misses (expected BLOCKED, got READY):            {len(misses)} {misses or ''}")
     print(f"False alarms (expected READY, got BLOCKED):      {len(false_alarms)} {false_alarms or ''}")
     print(f"Correct changes held up by questions (READY->NEEDS DECISION): {len(unwanted_questions)} {unwanted_questions or ''}")
     print(f"Defective changes routed to light review:        {len(light_defects)} {light_defects or ''}")
-    stabilities = [100 * Counter(signature(r) for r in runs).most_common(1)[0][1] // len(runs)
-                   for runs in by_case.values()]
     print(f"Label stability (identical results across runs): min {min(stabilities)}%, per case {stabilities}")
-    print(f"Share of runs routed to light review:            {100 * light // max(len(results), 1)}% ({light} of {len(results)})")
+    print(f"Share of runs routed to light review:            {light_share}")
     if known:
         print("Known limitation (Challenger off, run with --mode saved to see the questions):")
         for k in known:
@@ -258,7 +290,27 @@ def compare(results: list[dict], expected: dict[str, dict]) -> int:
         print("Other differences from the key:")
         for d in differences:
             print("  - " + d)
+
+    if summary_path:
+        summary = {"mode": mode, "generated": time.strftime("%Y-%m-%d %H:%M"),
+                   "runs": max(len(r) for r in by_case.values()),
+                   "metrics": {"misses": misses, "false_alarms": false_alarms, "held_up": unwanted_questions,
+                               "light_defects": light_defects, "stability_min": min(stabilities),
+                               "light_share": light_share},
+                   "known": known, "differences": differences, "cases": case_summaries}
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return 1 if misses or false_alarms or light_defects or unwanted_questions else 0
+
+
+def build_overview(summary_path: Path) -> None:
+    """Hand the summary to the engine, which writes overview-<mode>.html and .pdf next to it.
+    (Done through the CLI so this script stays standard-library only.)"""
+    done = subprocess.run([venv_python(ROOT), "-m", "evidence_gate.cli", "overview", "--summary", str(summary_path)],
+                          capture_output=True, text=True, encoding="utf-8")
+    print("\n" + (done.stdout.strip() or done.stderr.strip()))
+    if done.stdout.strip() and done.stderr.strip():
+        print(done.stderr.strip())
 
 
 def main() -> int:
@@ -270,14 +322,29 @@ def main() -> int:
     parser.add_argument("--results", type=Path, default=EVAL / "results.csv")
     parser.add_argument("--compare-only", action="store_true",
                         help="do not run anything: summarise the rows already in results.csv for --mode")
+    parser.add_argument("--pdf", action="store_true", help="also write report.pdf for every single run (slower)")
+    parser.add_argument("--overview-dir", type=Path, default=EVAL / "overview",
+                        help="where the overview (every case and its status, as HTML and PDF) is written")
+    parser.add_argument("--no-overview", action="store_true", help="do not build the overview document")
     args = parser.parse_args()
+
+    shop_folder = args.shop.resolve()
+    summary_path = None if args.no_overview else args.overview_dir / f"summary-{args.mode}.json"
+    case_rows = {c["case_id"]: c for c in read_csv(EVAL / "cases.csv")}
+
+    def finish(rows: list[dict], expected: dict[str, dict]) -> int:
+        code = compare(rows, expected, case_rows, shop_folder, summary_path, args.mode)
+        if summary_path:
+            build_overview(summary_path)
+        return code
 
     if args.compare_only:
         rows = [r for r in read_csv(args.results) if r["mode"] == args.mode]
         expected = {row["case_id"]: row for row in read_csv(EVAL / "expected.csv")}
-        return compare(rows, expected) if rows else (print(f"No '{args.mode}' rows in {args.results}") or 3)
+        for r in rows:
+            r["run"] = int(r["run"])
+        return finish(rows, expected) if rows else (print(f"No '{args.mode}' rows in {args.results}") or 3)
 
-    shop_folder = args.shop.resolve()
     cases = read_csv(EVAL / "cases.csv")
     if args.cases:
         wanted = {c.strip() for c in args.cases.split(",")}
@@ -302,7 +369,7 @@ def main() -> int:
                 shop.start(head)
                 try:
                     for run in range(1, args.runs + 1):
-                        result = run_gate(shop_folder, case, run, args.mode)
+                        result = run_gate(shop_folder, case, run, args.mode, args.pdf)
                         results.append(result)
                         writer.writerow(result)
                         f.flush()
@@ -325,7 +392,7 @@ def main() -> int:
         shop.restore_set_aside()                         # put back adapter files that were there before we started
         if started_on not in ("main", "HEAD"):
             print(f"Note: the shop was on '{started_on}' when this started; it is now on main.")
-    return compare(results, expected)
+    return finish(results, expected)
 
 
 if __name__ == "__main__":
