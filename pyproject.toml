@@ -25,3 +25,6 @@ evidence-gate = "evidence_gate.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+evidence_gate = ["challenger/prompt.md", "reporters/templates/*.html"]   # files the engine reads at run time

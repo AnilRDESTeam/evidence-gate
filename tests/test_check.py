@@ -72,6 +72,13 @@ def report_of(tmp_path):
     return json.loads((tmp_path / "out" / "report.json").read_text(encoding="utf-8"))
 
 
+@pytest.fixture(autouse=True)
+def no_real_test_run(monkeypatch):
+    """The example adapter's tests_command points at a .venv the temp repo does not have, so by default
+    no tests are run here. The tests at the bottom of the file replace this stub."""
+    monkeypatch.setattr(check_module.context, "run_existing_tests", lambda command, cwd: (None, None))
+
+
 @responses.activate
 def test_check_ready_exit_0_and_all_reports_written(project, tmp_path, capsys):
     fake_shop(project, shipping=5.99)
@@ -178,9 +185,14 @@ def test_check_not_a_git_repo_exit_3(tmp_path, capsys):
     assert "git" in capsys.readouterr().err
 
 
-def test_check_saved_challenger_is_refused_until_it_is_built(project, tmp_path, capsys):
+def test_check_live_challenger_is_refused(project, tmp_path, capsys):
+    assert check(project, tmp_path, challenger="live") == 3
+    assert "--challenger live is not available" in capsys.readouterr().err
+
+
+def test_check_saved_challenger_needs_a_challenge_file(project, tmp_path, capsys):
     assert check(project, tmp_path, challenger="saved") == 3
-    assert "not available yet" in capsys.readouterr().err
+    assert "--challenge-file" in capsys.readouterr().err
 
 
 @responses.activate
@@ -205,3 +217,54 @@ def test_check_missing_adapter_file_makes_scenarios_error_not_crash(project, tmp
     git(project, "commit", "-m", "no adapter")
     assert check(project, tmp_path) == 1
     assert report_of(tmp_path)["criteria"][0]["reason"] == "could_not_run"
+
+
+# ---- existing-tests context ----
+
+@responses.activate
+def test_check_existing_tests_go_into_report_terminal_and_md(project, tmp_path, capsys, monkeypatch):
+    calls = []
+
+    def fake_run(command, cwd):
+        calls.append((command, cwd))
+        return {"tests_passed": 41, "tests_total": 42}, None
+    monkeypatch.setattr(check_module.context, "run_existing_tests", fake_run)
+    fake_shop(project, shipping=5.99)
+    assert check(project, tmp_path) == 0
+    report = report_of(tmp_path)
+    assert report["context"] == {"tests_passed": 41, "tests_total": 42}
+    assert list(Draft202012Validator(REPORT_SCHEMA).iter_errors(report)) == []
+    assert "Existing tests: 41/42 passed (context only)" in capsys.readouterr().out
+    assert "Existing tests: 41/42 passed (context only)" in (tmp_path / "out" / "report.md").read_text(encoding="utf-8")
+    # The command comes from api.yaml and runs in the project folder.
+    assert calls == [(".venv\\Scripts\\python -m pytest -q", str(project))]
+
+
+@responses.activate
+def test_check_no_tests_flag_skips_the_run(project, tmp_path, monkeypatch):
+    def must_not_run(command, cwd):
+        raise AssertionError("tests were run")
+    monkeypatch.setattr(check_module.context, "run_existing_tests", must_not_run)
+    fake_shop(project, shipping=5.99)
+    assert check(project, tmp_path, no_tests=True) == 0
+    assert report_of(tmp_path)["context"] is None
+
+
+@responses.activate
+def test_check_failing_existing_tests_never_change_the_verdict(project, tmp_path, monkeypatch):
+    monkeypatch.setattr(check_module.context, "run_existing_tests",
+                        lambda command, cwd: ({"tests_passed": 0, "tests_total": 42}, None))
+    fake_shop(project, shipping=5.99)
+    assert check(project, tmp_path) == 0
+    report = report_of(tmp_path)
+    assert (report["verdict"], report["route"]) == ("READY", "light_review")
+
+
+@responses.activate
+def test_check_unreadable_test_output_is_a_warning(project, tmp_path, monkeypatch):
+    monkeypatch.setattr(check_module.context, "run_existing_tests",
+                        lambda command, cwd: (None, "Existing tests were skipped: no pytest summary"))
+    fake_shop(project, shipping=5.99)
+    assert check(project, tmp_path) == 0
+    report = report_of(tmp_path)
+    assert report["context"] is None and any("Existing tests were skipped" in w for w in report["warnings"])

@@ -1,4 +1,4 @@
-"""CLI: help works; the commands not built yet are stubs that exit 3 with 'not implemented yet'."""
+"""CLI: help works and lists every command."""
 
 import subprocess
 import sys
@@ -34,12 +34,5 @@ def test_command_help_exits_zero(name):
     assert run_cli(name, "--help").returncode == 0
 
 
-# `validate` (test_loader.py), `adapter-test` (test_http_driver.py) and `check` (test_check.py) are built; the rest are still stubs.
-STUBS = {k: v for k, v in COMMANDS.items() if k not in ("validate", "adapter-test", "check")}
-
-
-@pytest.mark.parametrize("name,args", STUBS.items())
-def test_stub_exits_3(name, args):
-    result = run_cli(name, *args)
-    assert result.returncode == 3
-    assert "not implemented yet" in result.stderr
+# Every command is built now (validate: test_loader.py, adapter-test: test_http_driver.py, check: test_check.py,
+# challenge-prompt: test_challenger.py), so there are no stubs left to test.

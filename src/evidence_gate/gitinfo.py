@@ -47,9 +47,12 @@ def is_dirty(repo) -> bool:
     return bool(_git(repo, "status", "--porcelain").strip())
 
 
-def diff_text(repo, base: str = "main") -> str:
-    """The full diff of this branch against `base` (used by the Challenger prompt)."""
-    return _git(repo, "diff", f"{base}...HEAD")
+def diff_text(repo, base: str = "main", paths: list[str] | None = None) -> str:
+    """The diff of this branch against `base` (used by the Challenger prompt).
+    With `paths`, only those files; an empty list means no files, so no diff."""
+    if paths is not None and not paths:
+        return ""  # `git diff -- ` with nothing after it would mean "everything", the opposite of what was asked
+    return _git(repo, "diff", f"{base}...HEAD", *(["--", *paths] if paths else []))
 
 
 def file_text(repo, path: str) -> str:

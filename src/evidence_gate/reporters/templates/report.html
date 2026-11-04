@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<style>
+  /* Everything is inline so the file can be mailed or opened from a USB stick. Big type: it is shown on a projector. */
+  :root { --ink:#1b1f24; --muted:#4a5560; --line:#c9d1d9; --bg:#ffffff; --panel:#f4f6f8;
+          --ready:#1a7f37; --blocked:#b42318; --decision:#b25e00; --error:#57606a; --bad-bg:#ffe3e0; --warn-bg:#fff4d6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:20px/1.5 "Segoe UI", system-ui, sans-serif; color:var(--ink); background:var(--bg); }
+  main { max-width:1200px; margin:0 auto; padding:24px 20px 48px; }
+  h1 { font-size:22px; font-weight:600; margin:0 0 12px; color:var(--muted); }
+  h2 { font-size:28px; margin:40px 0 12px; }
+  .banner { color:#fff; padding:24px 28px; border-radius:10px; }
+  .banner .verdict { font-size:56px; font-weight:700; line-height:1.1; letter-spacing:.5px; }
+  .banner .summary { font-size:26px; margin-top:6px; }
+  .banner.ready { background:var(--ready); } .banner.blocked { background:var(--blocked); }
+  .banner.decision { background:var(--decision); } .banner.error { background:var(--error); }
+  .route { background:var(--panel); border:2px solid var(--line); border-radius:10px; padding:18px 24px; margin-top:20px; }
+  .route .label { font-size:16px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+  .route .big { font-size:32px; font-weight:700; }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th, td { text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--line); }
+  th { font-size:16px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); background:var(--panel); }
+  .tag { display:inline-block; padding:2px 10px; border-radius:999px; font-weight:700; font-size:17px; border:2px solid currentColor; }
+  .t-verified, .t-pass { color:var(--ready); } .t-not_verified, .t-fail { color:var(--blocked); }
+  .t-needs_human_review, .t-error { color:var(--decision); } .t-verified_waived { color:var(--ready); }
+  .bad { background:var(--bad-bg); color:var(--blocked); font-weight:700; padding:1px 6px; border-radius:4px; }
+  .note { background:var(--warn-bg); border-left:6px solid var(--decision); padding:10px 16px; margin-top:12px; }
+  .muted { color:var(--muted); } .small { font-size:17px; } code { font:17px Consolas, monospace; }
+  ul { margin:8px 0; padding-left:26px; }
+  .shots { display:flex; flex-wrap:wrap; gap:16px; }
+  .shots figure { margin:0; } .shots img { max-width:340px; border:2px solid var(--line); border-radius:8px; display:block; }
+  footer { margin-top:48px; padding-top:16px; border-top:2px solid var(--line); color:var(--muted); font-size:17px; }
+  @media (max-width: 700px) { body { font-size:17px; } .banner .verdict { font-size:40px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>{{ title }}{% if report.title %} &middot; {{ report.title }}{% endif %}</h1>
+
+  <div class="banner {{ banner }}" role="status">
+    <div class="verdict">{{ report.verdict }}</div>
+    <div class="summary">{{ summary }}</div>
+  </div>
+
+  <div class="route">
+    <div class="label">Route</div>
+    <div class="big">{{ route }}</div>
+    <div>{{ report.route_reason }}</div>
+    <div style="margin-top:10px"><strong>Next action:</strong> {{ report.next_action }}</div>
+  </div>
+
+  {% for warning in report.warnings %}<div class="note">Warning: {{ warning }}</div>{% endfor %}
+
+  <h2>Criteria</h2>
+  <table>
+    <tr><th>Criterion</th><th>Priority</th><th>Label</th><th>Evidence</th></tr>
+    {% for cid, priority, label, evidence in criteria %}
+    <tr><td><strong>{{ cid }}</strong></td><td>{{ priority }}</td><td>{{ label }}</td><td class="small">{{ evidence }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h2>Evidence: every scenario that was run</h2>
+  <p class="muted small">Only scenarios with an expected value written by a person count towards a label.</p>
+  <table>
+    <tr><th>Scenario</th><th>Input</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+    {% for e in evidence %}
+    <tr>
+      <td><strong>{{ e.id }}</strong><br><span class="muted small">{{ e.criterion }}{% if e.priority %} &middot; {{ e.priority }}{% endif %}</span></td>
+      <td class="small">{{ e.input }}</td>
+      <td>{% for f in e.fields %}{{ f.name }} {{ f.expected }}<br>{% endfor %}</td>
+      <td>{% if e.error %}<span class="bad">could not run</span><br><span class="small">{{ e.error }}</span>
+          {% else %}{% for f in e.fields %}{% if f.bad %}<span class="bad">{{ f.name }} {{ f.actual }} &ne; {{ f.expected }}</span>{% else %}{{ f.name }} {{ f.actual }}{% endif %}<br>{% endfor %}{% endif %}</td>
+      <td><span class="tag t-{{ e.status }}">{{ e.status | upper }}</span></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="muted">No scenarios were run.</td></tr>
+    {% endfor %}
+  </table>
+
+  {% if screenshots %}
+  <h2>Screenshots</h2>
+  <div class="shots">
+    {% for s in screenshots %}<figure><a href="{{ s.href }}"><img src="{{ s.href }}" alt="Receipt screenshot for {{ s.scenario }}"></a><figcaption class="small">{{ s.scenario }}</figcaption></figure>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if report.questions %}
+  <h2>Questions for a person</h2>
+  <ul>
+    {% for q in report.questions %}<li><strong>{{ q.id }}</strong> ({{ q.criterion or "new" }}): {{ q.text }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+
+  {% if suggestions %}
+  <h2>AI suggestions <span class="muted">(not used for labels)</span></h2>
+  <p class="muted small">The expected values here are the AI's guesses, not facts. They never change a label or the verdict.</p>
+  <table>
+    <tr><th>Scenario</th><th>Input</th><th>AI guess</th><th>Actual</th><th>Status</th></tr>
+    {% for s in suggestions %}
+    <tr><td><strong>{{ s.id }}</strong><br><span class="muted small">{{ s.criterion }}</span></td><td class="small">{{ s.input }}</td>
+        <td class="small">{{ s.expected }}</td><td class="small">{{ s.actual }}</td><td><span class="tag t-{{ s.status }}">{{ s.status | upper }}</span></td></tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  <h2>Files</h2>
+  <p><strong>Changed:</strong> {% if report.changed_files %}{% for f in report.changed_files %}<code>{{ f }}</code>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}none{% endif %}</p>
+  <p><strong>Not covered by any criterion:</strong> {% if report.uncovered_files %}{% for f in report.uncovered_files %}<code>{{ f }}</code>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}none{% endif %}</p>
+  <p><strong>In a high-risk path:</strong> {% if report.high_risk_files %}{% for f in report.high_risk_files %}<code>{{ f }}</code>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}none{% endif %}</p>
+
+  <footer>
+    {% if tests_line %}<div>{{ tests_line }}</div>{% endif %}
+    <div><strong>Challenger AI:</strong> {{ challenger_text }}</div>
+    <div>Commit <code>{{ report.commit }}</code> against <code>{{ report.base }}</code> &middot; run <code>{{ report.run_id }}</code> &middot; {{ report.timestamp }}</div>
+    <div>Evidence Gate decides how much human review a change needs. It never removes human review.</div>
+  </footer>
+</main>
+</body>
+</html>

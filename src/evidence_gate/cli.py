@@ -1,4 +1,4 @@
-"""Command-line entry point. `validate`, `adapter-test` and `check` are built; the other commands are stubs for now."""
+"""Command-line entry point: `validate`, `adapter-test`, `challenge-prompt` and `check`."""
 
 import argparse
 import json
@@ -26,6 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("challenge-prompt", help="print the prompt for the Challenger AI")
     p.add_argument("--task", required=True, metavar="PATH")
+    p.add_argument("--base", default="main")
 
     p = sub.add_parser("check", help="run the full gate on the current branch")
     p.add_argument("--task", required=True, metavar="PATH")
@@ -127,6 +128,31 @@ def adapter_test(adapter_name: str, action: str, input_file: str) -> int:
     return 3 if result.error else 0
 
 
+def challenge_prompt(task_path: str, base: str) -> int:
+    """Print the filled Challenger prompt to paste into a chat. The prompt hash goes to stderr, so a `>` file stays clean."""
+    from evidence_gate import challenger
+    from evidence_gate.check import load_policy_or_default
+
+    try:
+        task = load_task(task_path)
+        problems = check_task_consistency(task)
+        if problems:
+            raise GateInputError([f"{task_path}: {p}" for p in problems])
+        repo = find_repo_root(task_path)
+        warnings: list[str] = []
+        policy = load_policy_or_default(repo / ".evidence-gate", warnings)
+        prompt = challenger.build_prompt(task_path, repo, base, policy["ignore_paths"])
+    except GateInputError as err:  # includes GitError
+        return report_errors([(task_path, err.problems)])
+    for warning in warnings:
+        print(f"WARN {warning}", file=sys.stderr)
+    # utf-8 and LF whatever the console, so a redirected file pastes the same everywhere.
+    sys.stdout.reconfigure(encoding="utf-8", newline="\n")
+    sys.stdout.write(prompt)
+    print(f"prompt_hash {challenger.prompt_hash()}", file=sys.stderr)
+    return 0
+
+
 def report_errors(errors: list[tuple[str, list[str]]]) -> int:
     for file, problems in errors:
         print(f"GATE ERROR: {file}", file=sys.stderr)
@@ -148,6 +174,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_check(args.task, args.base, args.out, args.challenger or "off", args.challenge_file, args.no_tests)
     if args.command == "adapter-test":
         return adapter_test(args.adapter, args.action, args.input_file)
+    if args.command == "challenge-prompt":
+        return challenge_prompt(args.task, args.base)
     # Stub: the real engine is built later, one module per session.
     print(f"evidence-gate {args.command}: not implemented yet", file=sys.stderr)
     return 3

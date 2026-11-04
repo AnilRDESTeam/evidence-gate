@@ -3,7 +3,7 @@
 from evidence_gate.reporters.common import header, route_text, rows, tests_line, verdict_summary
 
 
-def render(report: dict, records: list[dict]) -> str:
+def render(report: dict, records: list[dict], full_report: str | None = None) -> str:
     lines = [header(report), "",
              f"VERDICT: {report['verdict']} ({verdict_summary(report)})",
              f"ROUTE:   {route_text(report['route'])} - {report['route_reason']}", ""]
@@ -22,4 +22,6 @@ def render(report: dict, records: list[dict]) -> str:
         lines.append(f"Warning: {warning}")
     tests = tests_line(report)
     lines += ["", *( [tests] if tests else [] ), f"Next action: {report['next_action']}"]
+    if full_report:
+        lines.append(f"Full report: {full_report}")
     return "\n".join(lines) + "\n"

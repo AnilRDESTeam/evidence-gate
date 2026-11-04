@@ -27,6 +27,9 @@ def _value(v) -> str:
     return str(v)
 
 
+value_text = _value  # the public name, for the HTML reporter
+
+
 def evidence_line(record: dict) -> str:
     """'subtotal=50.00 -> shipping 0.00 (expected 5.99)' for one scenario."""
     given = ", ".join(f"{k}={_value(v)}" for k, v in record["input"].items())
