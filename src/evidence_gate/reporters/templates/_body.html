@@ -1,0 +1,80 @@
+{# One case's report. Used on its own (report.html) and once per case in the overview. Everything comes from `r`. #}
+<h1>{{ r.title }}{% if r.report.title %} &middot; {{ r.report.title }}{% endif %}</h1>
+
+<div class="banner {{ r.banner }}" role="status">
+  <div class="verdict">{{ r.report.verdict }}</div>
+  <div class="summary">{{ r.summary }}</div>
+</div>
+
+<div class="route">
+  <div class="label">Route</div>
+  <div class="big">{{ r.route }}</div>
+  <div>{{ r.report.route_reason }}</div>
+  <div style="margin-top:10px"><strong>Next action:</strong> {{ r.report.next_action }}</div>
+</div>
+
+{% for warning in r.report.warnings %}<div class="note">Warning: {{ warning }}</div>{% endfor %}
+
+<h2>Criteria</h2>
+<table>
+  <tr><th>Criterion</th><th>Priority</th><th>Label</th><th>Evidence</th></tr>
+  {% for cid, priority, label, evidence in r.criteria %}
+  <tr><td><strong>{{ cid }}</strong></td><td>{{ priority }}</td><td>{{ label }}</td><td class="small">{{ evidence }}</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Evidence: every scenario that was run</h2>
+<p class="muted small">Only scenarios with an expected value written by a person count towards a label.</p>
+<table>
+  <tr><th>Scenario</th><th>Input</th><th>Expected</th><th>Actual</th><th>Status</th></tr>
+  {% for e in r.evidence %}
+  <tr>
+    <td><strong>{{ e.id }}</strong><br><span class="muted small">{{ e.criterion }}{% if e.priority %} &middot; {{ e.priority }}{% endif %}</span></td>
+    <td class="small">{{ e.input }}</td>
+    <td>{% for f in e.fields %}{{ f.name }} {{ f.expected }}<br>{% endfor %}</td>
+    <td>{% if e.error %}<span class="bad">could not run</span><br><span class="small">{{ e.error }}</span>
+        {% else %}{% for f in e.fields %}{% if f.bad %}<span class="bad">{{ f.name }} {{ f.actual }} &ne; {{ f.expected }}</span>{% else %}{{ f.name }} {{ f.actual }}{% endif %}<br>{% endfor %}{% endif %}</td>
+    <td><span class="tag t-{{ e.status }}">{{ e.status | upper }}</span></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5" class="muted">No scenarios were run.</td></tr>
+  {% endfor %}
+</table>
+
+{% if r.screenshots %}
+<h2>Screenshots</h2>
+<div class="shots">
+  {% for s in r.screenshots %}<figure><a href="{{ s.href }}"><img src="{{ s.href }}" alt="Receipt screenshot for {{ s.scenario }}"></a><figcaption class="small">{{ s.scenario }}</figcaption></figure>{% endfor %}
+</div>
+{% endif %}
+
+{% if r.report.questions %}
+<h2>Questions for a person</h2>
+<ul>
+  {% for q in r.report.questions %}<li><strong>{{ q.id }}</strong> ({{ q.criterion or "new" }}): {{ q.text }}</li>{% endfor %}
+</ul>
+{% endif %}
+
+{% if r.suggestions %}
+<h2>AI suggestions <span class="muted">(not used for labels)</span></h2>
+<p class="muted small">The expected values here are the AI's guesses, not facts. They never change a label or the verdict.</p>
+<table>
+  <tr><th>Scenario</th><th>Input</th><th>AI guess</th><th>Actual</th><th>Status</th></tr>
+  {% for s in r.suggestions %}
+  <tr><td><strong>{{ s.id }}</strong><br><span class="muted small">{{ s.criterion }}</span></td><td class="small">{{ s.input }}</td>
+      <td class="small">{{ s.expected }}</td><td class="small">{{ s.actual }}</td><td><span class="tag t-{{ s.status }}">{{ s.status | upper }}</span></td></tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<h2>Files</h2>
+<p><strong>Changed:</strong> {% if r.report.changed_files %}{% for f in r.report.changed_files %}<code>{{ f }}</code>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}none{% endif %}</p>
+<p><strong>Not covered by any criterion:</strong> {% if r.report.uncovered_files %}{% for f in r.report.uncovered_files %}<code>{{ f }}</code>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}none{% endif %}</p>
+<p><strong>In a high-risk path:</strong> {% if r.report.high_risk_files %}{% for f in r.report.high_risk_files %}<code>{{ f }}</code>{% if not loop.last %}, {% endif %}{% endfor %}{% else %}none{% endif %}</p>
+
+<footer>
+  {% if r.tests_line %}<div>{{ r.tests_line }}</div>{% endif %}
+  <div><strong>Challenger AI:</strong> {{ r.challenger_text }}</div>
+  <div>Commit <code>{{ r.report.commit }}</code> against <code>{{ r.report.base }}</code> &middot; run <code>{{ r.report.run_id }}</code> &middot; {{ r.report.timestamp }}</div>
+  <div>Evidence Gate decides how much human review a change needs. It never removes human review.</div>
+</footer>

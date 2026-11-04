@@ -1,0 +1,47 @@
+/* Everything is inline so a report can be mailed or opened from a USB stick. Big type: it is shown on a projector. */
+:root { --ink:#1b1f24; --muted:#4a5560; --line:#c9d1d9; --bg:#ffffff; --panel:#f4f6f8;
+        --ready:#1a7f37; --blocked:#b42318; --decision:#b25e00; --error:#57606a; --bad-bg:#ffe3e0; --warn-bg:#fff4d6; }
+* { box-sizing: border-box; }
+body { margin:0; font:20px/1.5 "Segoe UI", system-ui, sans-serif; color:var(--ink); background:var(--bg); }
+main { max-width:1200px; margin:0 auto; padding:24px 20px 48px; }
+h1 { font-size:22px; font-weight:600; margin:0 0 12px; color:var(--muted); }
+h2 { font-size:28px; margin:40px 0 12px; }
+.banner { color:#fff; padding:24px 28px; border-radius:10px; }
+.banner .verdict { font-size:56px; font-weight:700; line-height:1.1; letter-spacing:.5px; }
+.banner .summary { font-size:26px; margin-top:6px; }
+.banner.ready { background:var(--ready); } .banner.blocked { background:var(--blocked); }
+.banner.decision { background:var(--decision); } .banner.error { background:var(--error); }
+.route { background:var(--panel); border:2px solid var(--line); border-radius:10px; padding:18px 24px; margin-top:20px; }
+.route .label { font-size:16px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); }
+.route .big { font-size:32px; font-weight:700; }
+table { width:100%; border-collapse:collapse; margin-top:8px; }
+th, td { text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--line); }
+th { font-size:16px; text-transform:uppercase; letter-spacing:.8px; color:var(--muted); background:var(--panel); }
+.tag { display:inline-block; padding:2px 10px; border-radius:999px; font-weight:700; font-size:17px; border:2px solid currentColor; }
+.t-verified, .t-pass, .t-match { color:var(--ready); } .t-not_verified, .t-fail, .t-differs { color:var(--blocked); }
+.t-needs_human_review, .t-error, .t-known { color:var(--decision); } .t-verified_waived { color:var(--ready); }
+.bad { background:var(--bad-bg); color:var(--blocked); font-weight:700; padding:1px 6px; border-radius:4px; }
+.note { background:var(--warn-bg); border-left:6px solid var(--decision); padding:10px 16px; margin-top:12px; }
+.muted { color:var(--muted); } .small { font-size:17px; } code { font:17px Consolas, monospace; }
+ul { margin:8px 0; padding-left:26px; }
+.shots { display:flex; flex-wrap:wrap; gap:16px; }
+.shots figure { margin:0; } .shots img { max-width:340px; border:2px solid var(--line); border-radius:8px; display:block; }
+footer { margin-top:48px; padding-top:16px; border-top:2px solid var(--line); color:var(--muted); font-size:17px; }
+.stats { display:flex; flex-wrap:wrap; gap:12px; margin:12px 0 4px; }
+.stat { background:var(--panel); border:2px solid var(--line); border-radius:10px; padding:10px 18px; }
+.stat b { display:block; font-size:34px; line-height:1.1; }
+@media (max-width: 700px) { body { font-size:17px; } .banner .verdict { font-size:40px; } }
+/* Printing to PDF: A4, smaller type, colours kept, rows never split across pages. */
+@page { size: A4; margin: 12mm; }
+@media print {
+  body { font-size:12px; } main { max-width:none; padding:0; }
+  h1 { font-size:14px; } h2 { font-size:17px; margin:22px 0 8px; break-after:avoid; }
+  .banner { padding:14px 18px; } .banner .verdict { font-size:34px; } .banner .summary { font-size:15px; }
+  .route .big { font-size:20px; } .route { padding:10px 16px; margin-top:12px; }
+  th { font-size:10px; } .small { font-size:11px; } code { font-size:11px; } .tag { font-size:11px; padding:1px 7px; }
+  .stat b { font-size:22px; }
+  tr, figure, .banner, .route, .note { break-inside:avoid; }
+  .shots img { max-width:230px; }
+  .case { break-before:page; }
+  footer { margin-top:22px; font-size:10px; }
+}

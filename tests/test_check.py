@@ -65,6 +65,7 @@ def fake_shop(repo, shipping, commit=None):
 
 
 def check(repo, tmp_path, **kwargs):
+    kwargs.setdefault("pdf", False)   # a PDF needs a browser start; tests/test_pdf_report.py covers it
     return run_check(str(repo / "requirements" / "T.task.yaml"), out_dir=str(tmp_path / "out"), **kwargs)
 
 

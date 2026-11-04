@@ -9,7 +9,7 @@ from evidence_gate import context, coverage, gitinfo
 from evidence_gate.labeller import label_criteria
 from evidence_gate.loader import (GateInputError, check_task_consistency, find_contract_dir, find_repo_root,
                                   load_adapter, load_policy, load_task)
-from evidence_gate.reporters import html_report, json_report, md_report, terminal
+from evidence_gate.reporters import html_report, json_report, md_report, pdf_report, terminal
 from evidence_gate.router import decide_route, next_action
 from evidence_gate.runner import NO_CHALLENGER, run_scenarios
 from evidence_gate.scenarios import build_scenarios
@@ -60,7 +60,7 @@ def _error_report(task, head, base, run_id, message) -> dict:
 
 
 def run_check(task_path: str, base: str = "main", out_dir: str = "out", challenger: str = "off",
-              challenge_file: str | None = None, no_tests: bool = False) -> int:
+              challenge_file: str | None = None, no_tests: bool = False, pdf: bool = True) -> int:
     task = head = None
     run_id = datetime.now(timezone.utc).strftime("r-%Y%m%d-%H%M%S")
     try:
@@ -128,7 +128,14 @@ def run_check(task_path: str, base: str = "main", out_dir: str = "out", challeng
         }
         full_report = Path(out_dir, "report.html").as_posix()
         json_report.write(report, out_dir)
-        html_report.write(report, records, out_dir)
+        html_path = html_report.write(report, records, out_dir)
+        if pdf:
+            # A PDF is a convenience: if there is no browser, say so and carry on; it never changes the verdict.
+            _, pdf_problem = pdf_report.write(html_path, adapters.get("browser", {}).get("channel"))
+            if pdf_problem:
+                print(f"Note: {pdf_problem}", file=sys.stderr)
+            else:
+                full_report += f" and {Path(out_dir, 'report.pdf').as_posix()}"
         md_report.write(report, records, out_dir, full_report)
         print(terminal.render(report, records, full_report), end="")
         return report["exit_code"]

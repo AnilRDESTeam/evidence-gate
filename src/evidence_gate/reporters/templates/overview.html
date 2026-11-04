@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evidence Gate: evaluation overview ({{ o.summary.mode }})</title>
+<style>
+{{ style | safe }}
+</style>
+</head>
+<body>
+<main>
+  <h1>Evidence Gate &middot; evaluation overview</h1>
+  <div class="route">
+    <div class="label">Challenger AI: {{ o.summary.mode }}{% if o.summary.mode == "off" %} (no AI was used){% else %} (saved answers){% endif %}</div>
+    <div class="big">{{ o.cases | length }} cases, {{ o.summary.runs }} run{{ "s" if o.summary.runs != 1 }} each</div>
+    <div class="small muted">Generated {{ o.summary.generated }}. Each change was checked on its own branch of the shop and compared with an answer key written before the first run.</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>{{ o.summary.metrics.misses | length }}</b>defects missed</div>
+    <div class="stat"><b>{{ o.summary.metrics.false_alarms | length }}</b>correct changes blocked</div>
+    <div class="stat"><b>{{ o.summary.metrics.held_up | length }}</b>correct changes held up by questions</div>
+    <div class="stat"><b>{{ o.summary.metrics.light_defects | length }}</b>defects sent to light review</div>
+    <div class="stat"><b>{{ o.summary.metrics.stability_min }}%</b>lowest stability across runs</div>
+    <div class="stat"><b>{{ o.summary.metrics.light_share }}</b>of runs routed to light review</div>
+  </div>
+
+  <h2>Every case and its status</h2>
+  <table>
+    <tr><th>Case</th><th>What the AI did</th><th>The key says</th><th>The Gate said</th><th>Result</th></tr>
+    {% for c in o.cases %}
+    <tr>
+      <td><strong>{{ c.case_id }}</strong><br><span class="muted small">{{ c.origin }}</span></td>
+      <td class="small">{{ c.description }}</td>
+      <td class="small">{{ c.key_text }}</td>
+      <td class="small"><strong>{{ c.got_text }}</strong><br>{{ c.got_labels }}<br><span class="muted">identical in {{ c.stable_pct }}% of {{ c.runs }} runs</span></td>
+      <td><span class="tag t-{{ c.status_css }}">{{ c.status_text }}</span>{% for n in c.notes %}<br><span class="small">{{ n }}</span>{% endfor %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  {% if o.summary.known %}
+  <h2>Known limitations</h2>
+  <ul>{% for k in o.summary.known %}<li>{{ k }}</li>{% endfor %}</ul>
+  {% endif %}
+
+  <p class="muted small" style="margin-top:28px">READY means every written example passed and a person only skims it. BLOCKED means a written example failed. NEEDS DECISION means the spec leaves a question open. The Gate decides how much human review a change needs; it never removes human review. What the evaluation does not show is in docs/LIMITATIONS.md.</p>
+
+  {% for case in o.cases %}
+  <section class="case">
+    {# _body.html reads from `r`: here that is this case's full report #}
+    {% if case.report %}{% set r = case.report %}{% include "_body.html" %}{% else %}
+    <h1>{{ case.case_id }}</h1><div class="note">The report files for this case were not found, so only the summary above is available.</div>
+    {% endif %}
+  </section>
+  {% endfor %}
+</main>
+</body>
+</html>

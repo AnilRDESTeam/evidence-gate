@@ -223,6 +223,7 @@ def check_with_fake_shop(project, tmp_path, monkeypatch):
                         partial(check_module.run_scenarios, driver_factory=lambda *a: FakeShop(head(project))))
 
     def run(**kwargs):
+        kwargs.setdefault("pdf", False)   # a PDF needs a browser start; only the PDF tests ask for one
         code = run_check(str(task_path(project)), out_dir=str(tmp_path / "out"), no_tests=True, **kwargs)
         report = json.loads((tmp_path / "out" / "report.json").read_text(encoding="utf-8"))
         return code, report
@@ -236,6 +237,33 @@ def test_off_mode_uses_scope_paths_and_records_no_ai(check_with_fake_shop, tmp_p
     assert report["challenger"] == {"mode": "off", "model": None, "prompt_hash": None}
     assert report["uncovered_files"] == ["app/catalog/products.py"]      # not in scope.paths
     assert (code, report["route"]) == (0, "focused_review") and report["ai_suggestions"] == []
+
+
+def test_check_writes_report_pdf_next_to_the_html_and_points_to_it(check_with_fake_shop, tmp_path, capsys):
+    code, _ = check_with_fake_shop(pdf=True)
+    out = capsys.readouterr()
+    pdf = tmp_path / "out" / "report.pdf"
+    if not pdf.exists():
+        pytest.skip("no browser to print with: " + out.err.strip())
+    assert code == 0 and pdf.read_bytes().startswith(b"%PDF")
+    assert "report.html and " in out.out and out.out.rstrip().endswith("report.pdf")
+    assert "report.html and" in (tmp_path / "out" / "report.md").read_text(encoding="utf-8")
+
+
+def test_a_pdf_that_cannot_be_made_is_a_note_and_never_changes_the_result(check_with_fake_shop, tmp_path, capsys,
+                                                                         monkeypatch):
+    monkeypatch.setattr(check_module.pdf_report, "write", lambda html, channel=None: (None, "PDF not written: no browser"))
+    code, report = check_with_fake_shop(pdf=True)
+    out = capsys.readouterr()
+    assert code == 0 and report["verdict"] == "READY"      # the missing PDF changed nothing
+    assert "Note: PDF not written: no browser" in out.err
+    assert not (tmp_path / "out" / "report.pdf").exists() and "report.pdf" not in out.out
+
+
+def test_no_pdf_means_no_browser_is_started(check_with_fake_shop, tmp_path, monkeypatch):
+    monkeypatch.setattr(check_module.pdf_report, "write", lambda *a, **k: pytest.fail("a PDF was requested"))
+    check_with_fake_shop(pdf=False)
+    assert (tmp_path / "out" / "report.html").exists()
 
 
 def test_saved_mode_uses_the_challenge_coverage_and_records_the_ai(check_with_fake_shop, project, tmp_path):

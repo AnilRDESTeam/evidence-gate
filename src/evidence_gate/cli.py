@@ -35,6 +35,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--challenge-file", metavar="PATH")
     p.add_argument("--out", default="out")
     p.add_argument("--no-tests", action="store_true")
+    p.add_argument("--no-pdf", action="store_true", help="do not write report.pdf next to report.html")
+
+    p = sub.add_parser("overview", help="build the evaluation overview (every case and its status) as HTML and PDF")
+    p.add_argument("--summary", required=True, metavar="PATH", help="the summary JSON written by eval/run_eval.py")
+    p.add_argument("--out", metavar="DIR", help="where to write it (default: next to the summary)")
+    p.add_argument("--no-pdf", action="store_true")
     return parser
 
 
@@ -153,6 +159,29 @@ def challenge_prompt(task_path: str, base: str) -> int:
     return 0
 
 
+def overview(summary_path: str, out_dir: str | None, pdf: bool) -> int:
+    """Build the evaluation overview from the summary JSON that eval/run_eval.py writes."""
+    from evidence_gate.reporters import overview_report
+
+    try:
+        summary = json.loads(Path(summary_path).read_text(encoding="utf-8"))
+        html_path, pdf_path, problem = overview_report.write(summary, out_dir or Path(summary_path).parent, pdf)
+    except (OSError, ValueError, KeyError) as err:
+        return report_errors([(summary_path, [f"cannot build the overview: {err!r}"])])
+    print(f"Overview: {html_path}")
+    if pdf_path:
+        print(f"PDF:      {pdf_path}")
+        # Copies go beside the overview (cases-off/E1.pdf ...), so every report is in one folder.
+        case_pdfs, case_problem = overview_report.write_case_pdfs(summary, html_path.parent / f"cases-{summary['mode']}")
+        for case_pdf in case_pdfs:
+            print(f"  case:   {case_pdf}")
+        if case_problem:
+            print(f"Note: {case_problem}", file=sys.stderr)
+    elif problem:
+        print(f"Note: {problem}", file=sys.stderr)
+    return 0
+
+
 def report_errors(errors: list[tuple[str, list[str]]]) -> int:
     for file, problems in errors:
         print(f"GATE ERROR: {file}", file=sys.stderr)
@@ -171,7 +200,10 @@ def main(argv: list[str] | None = None) -> int:
         return validate(args.task)
     if args.command == "check":
         from evidence_gate.check import run_check
-        return run_check(args.task, args.base, args.out, args.challenger or "off", args.challenge_file, args.no_tests)
+        return run_check(args.task, args.base, args.out, args.challenger or "off", args.challenge_file, args.no_tests,
+                         pdf=not args.no_pdf)
+    if args.command == "overview":
+        return overview(args.summary, args.out, not args.no_pdf)
     if args.command == "adapter-test":
         return adapter_test(args.adapter, args.action, args.input_file)
     if args.command == "challenge-prompt":
