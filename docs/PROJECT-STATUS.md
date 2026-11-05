@@ -1,6 +1,6 @@
 # Evidence Gate: project status and handoff
 
-Last updated: 2026-11-04. Written so a new Claude session (or a person) can continue without the earlier conversation. Read the repo's `CLAUDE.md` first; its rules apply to everyone.
+Last updated: 2026-11-05. Written so a new Claude session (or a person) can continue without the earlier conversation. Read the repo's `CLAUDE.md` first; its rules apply to everyone.
 
 ## 1. What this is
 
@@ -100,7 +100,7 @@ python scripts/demo.py --all      # all five; add --mode saved for the Challenge
 python eval/run_eval.py --mode off --runs 5      # full evaluation, off
 python eval/run_eval.py --mode saved --runs 5    # full evaluation, saved Challenger answers
 python eval/run_eval.py --compare-only --mode off   # rebuild the summary/overview from results.csv
-.venv\Scripts\python -m pytest -q --ignore=tests/test_check.py --ignore=tests/test_http_driver.py
+.venv\Scripts\python -m pytest -q
 ```
 
 By hand: start the shop on the branch (`uvicorn app.main:app --host 127.0.0.1 --port 8080`, restart after every branch switch), copy `eval\adapters\*.yaml` to `shop-demo\.evidence-gate\adapters\`, then `evidence-gate check --task requirements\SHOP-102.task.yaml` from `shop-demo`.
@@ -109,13 +109,12 @@ By hand: start the shop on the branch (`uvicorn app.main:app --host 127.0.0.1 --
 
 1. **E1 spot check by a person**: `eval/spotchecks.csv` has E1 marked PENDING (the plan requires every light-routed case to be confirmed by hand).
 2. **Anil checks every command in the docs** (Step 16 asks for it).
-3. **`tests/test_check.py` and `tests/test_http_driver.py` could not be run here**: they need the `responses` package, which needs PyYAML, which has no wheel for Python 3.15. Run them on a machine where `pip install -e .[dev]` works. They were edited carefully but not executed.
-4. **`git tag m1-core`** (Milestone 1) was never created.
-5. **Local `shop-demo` `main` has diverged from `origin/main`** (it holds the pre-squash commit; origin has the squashed PR plus the adapters commit `3ce9b60`). Content is identical. Sync with `git checkout main && git reset --hard origin/main` when convenient.
-6. **Decision for Anil**: leave the Challenger over-asking as a documented limitation (current), or tighten its prompt and run a second round (record it as round 2, do not overwrite round 1).
-7. **Cosmetic**: reports for branches checked in by the evaluation show "working tree has uncommitted changes" (the runner lays adapter files over each branch). Harmless but odd in a handout; could be suppressed for evaluation runs.
-8. **Optional**: repeat the cold test now that PDFs were added, for fresh timing numbers.
-9. A pull request or merge on the `eval/*` branches should be closed, not merged (see section 4).
+3. **`git tag m1-core`** (Milestone 1) was never created.
+4. **Local `shop-demo` `main` has diverged from `origin/main`** (it holds the pre-squash commit; origin has the squashed PR plus the adapters commit `3ce9b60`). Content is identical. Sync with `git checkout main && git reset --hard origin/main` when convenient.
+5. **Decision for Anil**: leave the Challenger over-asking as a documented limitation (current), or tighten its prompt and run a second round (record it as round 2, do not overwrite round 1).
+6. **Cosmetic**: reports for branches checked in by the evaluation show "working tree has uncommitted changes" (the runner lays adapter files over each branch). Harmless but odd in a handout; could be suppressed for evaluation runs.
+7. **Optional**: repeat the cold test now that PDFs were added, for fresh timing numbers.
+8. A pull request or merge on the `eval/*` branches should be closed, not merged (see section 4).
 
 ## 10. Decisions and gotchas worth knowing
 
@@ -133,4 +132,17 @@ By hand: start the shop on the branch (`uvicorn app.main:app --host 127.0.0.1 --
 
 ## 11. Test status
 
-`pytest` (excluding the two files in open item 3): **287 passed, 4 skipped** (the skips are live browser tests that need a running shop). 54 of those are the rule tests.
+Historical result from 2026-11-04: **287 passed, 4 skipped**, excluding `tests/test_check.py` and `tests/test_http_driver.py`. The four skips required a running shop; 54 passing tests covered the rule rows.
+
+Verification on 2026-11-05 used fresh local copies on Windows with Python 3.12.14, `evidence-gate` commit `65b7436`, and `shop-demo` commit `3ce9b60`. The declared development dependencies, including `responses` and PyYAML, installed successfully on this Python version.
+
+| Test scope | Result |
+|---|---|
+| Previously pending `tests/test_http_driver.py` and `tests/test_check.py` | **47 passed** |
+| Full Evidence Gate suite, before the test browser and shop were available | **328 passed, 10 skipped** |
+| `tests/test_pdf_report.py`, `tests/test_overview_report.py`, and `tests/test_challenger.py`, with Playwright Chromium available | **48 passed, 0 skipped** |
+| `tests/test_browser_driver.py`, with Chromium and the local shop running | **14 passed, 0 skipped**, including the four live checks |
+
+These runs overlap, so their counts must not be added together. The full suite was not rerun with both the browser and shop available. The report and browser runs completed without failures or skips. The shop health response reported `mode: test`, commit `3ce9b60`, and `dirty: false`.
+
+This verification did not rerun the five-case evaluation or complete the independent human E1 spot check. The evaluation results in section 5 and the remaining open items are unchanged.
